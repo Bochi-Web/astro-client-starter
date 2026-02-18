@@ -1,0 +1,45 @@
+---
+/**
+ * Hero
+ * Full-width hero section with headline, supporting text, and CTAs.
+ * Uses a background image with dark overlay for text readability.
+ *
+ * data-section="hero"
+ */
+
+import { siteConfig } from '../../data/siteConfig';
+import Button from '../ui/Button.astro';
+---
+
+<section data-section="hero" class="relative bg-secondary overflow-hidden">
+  <!-- Background image with overlay -->
+  <div class="absolute inset-0">
+    <img
+      src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=1600&q=80"
+      alt="Professional home services"
+      class="w-full h-full object-cover"
+      loading="eager"
+    />
+    <div class="absolute inset-0 bg-secondary/70"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="relative max-w-7xl mx-auto px-4 py-24 md:py-36 lg:py-44">
+    <div class="max-w-2xl">
+      <h1 class="text-4xl md:text-5xl lg:text-6xl font-heading font-extrabold text-white leading-tight mb-6">
+        Professional Home Services You Can Count On
+      </h1>
+      <p class="text-lg md:text-xl text-gray-200 mb-8 leading-relaxed">
+        From routine maintenance to major projects, our experienced team delivers
+        quality workmanship and reliable service — every time. Serving
+        {siteConfig.address.city} and surrounding areas.
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4">
+        <Button href="/contact/">Get a Free Quote</Button>
+        <Button href="/#services" variant="secondary" class="border-white text-white hover:bg-white hover:text-secondary">
+          Our Services
+        </Button>
+      </div>
+    </div>
+  </div>
+</section>

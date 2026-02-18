@@ -1,0 +1,173 @@
+---
+/**
+ * Navigation
+ * Sticky top navigation bar with logo, nav links, services dropdown, and CTA.
+ * Mobile: hamburger menu with slide-out panel.
+ * Desktop: horizontal nav with dropdown for Services.
+ *
+ * data-section="navigation"
+ */
+
+import { siteConfig } from '../../data/siteConfig';
+import Button from '../ui/Button.astro';
+---
+
+<nav data-section="navigation" class="sticky top-0 z-50 bg-surface/95 backdrop-blur-sm border-b border-border">
+  <div class="max-w-7xl mx-auto px-4 flex items-center justify-between h-16 md:h-20">
+
+    <!-- Logo / Business Name -->
+    <a href="/" class="flex items-center gap-2 font-heading font-bold text-xl text-secondary">
+      {siteConfig.businessName}
+    </a>
+
+    <!-- Desktop Nav Links -->
+    <div class="hidden md:flex items-center gap-8">
+      <a href="/" class="text-content hover:text-primary transition-colors font-medium">Home</a>
+
+      <!-- Services Dropdown -->
+      <div class="relative group">
+        <button
+          type="button"
+          class="flex items-center gap-1 text-content hover:text-primary transition-colors font-medium cursor-pointer"
+        >
+          Services
+          <!-- Chevron down icon -->
+          <svg class="w-4 h-4 transition-transform group-hover:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <!-- Dropdown menu -->
+        <div class="absolute top-full left-0 mt-1 w-56 bg-surface border border-border rounded-md shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+          <div class="py-2">
+            {siteConfig.services.map((service) => (
+              <a
+                href={`/services/${service.slug}/`}
+                class="block px-4 py-2 text-sm text-content hover:bg-primary-light hover:text-primary transition-colors"
+              >
+                {service.title}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <a href="/#about" class="text-content hover:text-primary transition-colors font-medium">About</a>
+      <a href="/contact/" class="text-content hover:text-primary transition-colors font-medium">Contact</a>
+    </div>
+
+    <!-- Desktop CTA -->
+    <div class="hidden md:block">
+      <Button href="/contact/">Get a Free Quote</Button>
+    </div>
+
+    <!-- Mobile Hamburger Button -->
+    <button
+      type="button"
+      id="mobile-menu-btn"
+      class="md:hidden flex flex-col gap-1.5 p-2 cursor-pointer"
+      aria-label="Toggle menu"
+      aria-expanded="false"
+    >
+      <span class="hamburger-line block w-6 h-0.5 bg-secondary transition-all duration-300"></span>
+      <span class="hamburger-line block w-6 h-0.5 bg-secondary transition-all duration-300"></span>
+      <span class="hamburger-line block w-6 h-0.5 bg-secondary transition-all duration-300"></span>
+    </button>
+  </div>
+
+  <!-- Mobile Menu Panel -->
+  <div
+    id="mobile-menu"
+    class="md:hidden fixed inset-0 top-16 bg-surface z-40 transform translate-x-full transition-transform duration-300 ease-in-out"
+  >
+    <div class="flex flex-col p-6 gap-4">
+      <a href="/" class="text-lg font-medium text-content hover:text-primary transition-colors py-2">Home</a>
+
+      <!-- Mobile Services Accordion -->
+      <div>
+        <button
+          type="button"
+          id="mobile-services-btn"
+          class="flex items-center justify-between w-full text-lg font-medium text-content hover:text-primary transition-colors py-2 cursor-pointer"
+        >
+          Services
+          <svg class="w-5 h-5 transition-transform" id="mobile-services-chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div id="mobile-services-list" class="hidden pl-4 flex flex-col gap-2 mt-1">
+          {siteConfig.services.map((service) => (
+            <a
+              href={`/services/${service.slug}/`}
+              class="text-content-light hover:text-primary transition-colors py-1"
+            >
+              {service.title}
+            </a>
+          ))}
+        </div>
+      </div>
+
+      <a href="/#about" class="text-lg font-medium text-content hover:text-primary transition-colors py-2">About</a>
+      <a href="/contact/" class="text-lg font-medium text-content hover:text-primary transition-colors py-2">Contact</a>
+
+      <div class="mt-4">
+        <Button href="/contact/" class="w-full text-center">Get a Free Quote</Button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Minimal vanilla JS for mobile menu toggle -->
+<script>
+  const menuBtn = document.getElementById('mobile-menu-btn');
+  const menu = document.getElementById('mobile-menu');
+  const servicesBtn = document.getElementById('mobile-services-btn');
+  const servicesList = document.getElementById('mobile-services-list');
+  const servicesChevron = document.getElementById('mobile-services-chevron');
+
+  // Toggle mobile menu open/close
+  menuBtn?.addEventListener('click', () => {
+    const isOpen = menu?.classList.contains('translate-x-0');
+    if (isOpen) {
+      menu?.classList.remove('translate-x-0');
+      menu?.classList.add('translate-x-full');
+      menuBtn.setAttribute('aria-expanded', 'false');
+    } else {
+      menu?.classList.remove('translate-x-full');
+      menu?.classList.add('translate-x-0');
+      menuBtn.setAttribute('aria-expanded', 'true');
+    }
+    // Animate hamburger lines
+    const lines = menuBtn.querySelectorAll('.hamburger-line');
+    lines.forEach((line) => line.classList.toggle('hamburger-active'));
+  });
+
+  // Toggle mobile services accordion
+  servicesBtn?.addEventListener('click', () => {
+    servicesList?.classList.toggle('hidden');
+    servicesChevron?.classList.toggle('rotate-180');
+  });
+
+  // Close mobile menu when clicking a link
+  menu?.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      menu?.classList.remove('translate-x-0');
+      menu?.classList.add('translate-x-full');
+      menuBtn?.setAttribute('aria-expanded', 'false');
+      const lines = menuBtn?.querySelectorAll('.hamburger-line');
+      lines?.forEach((line) => line.classList.remove('hamburger-active'));
+    });
+  });
+</script>
+
+<!-- Hamburger animation styles -->
+<style>
+  .hamburger-active:nth-child(1) {
+    transform: translateY(4px) rotate(45deg);
+  }
+  .hamburger-active:nth-child(2) {
+    opacity: 0;
+  }
+  .hamburger-active:nth-child(3) {
+    transform: translateY(-4px) rotate(-45deg);
+  }
+</style>
