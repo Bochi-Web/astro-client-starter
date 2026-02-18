@@ -54,7 +54,13 @@
     50% { opacity: 0.4; }
   }
 
-  .bw-edit-toolbar__exit {
+  .bw-edit-toolbar__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .bw-edit-toolbar__btn {
     padding: 0.375rem 0.75rem;
     border: 1px solid rgba(255, 255, 255, 0.25);
     border-radius: 0.375rem;
@@ -64,9 +70,12 @@
     font-weight: 500;
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
   }
 
-  .bw-edit-toolbar__exit:hover {
+  .bw-edit-toolbar__btn:hover {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.4);
   }
@@ -87,6 +96,11 @@
 
   [data-edit-mode] [data-section]:hover {
     outline: 2px dashed var(--color-primary, #2563eb);
+  }
+
+  /* Global sections get orange/gold dashed border */
+  [data-edit-mode] [data-section][data-global="true"]:hover {
+    outline-color: #f59e0b;
   }
 
   /* ── Section label badge ── */
@@ -111,6 +125,11 @@
     transition: opacity 0.15s ease;
   }
 
+  /* Global section badges use orange/gold */
+  [data-edit-mode] [data-section][data-global="true"]::before {
+    background: #f59e0b;
+  }
+
   [data-edit-mode] [data-section]:hover::before {
     opacity: 1;
   }
@@ -121,6 +140,10 @@
     outline-offset: -2px;
     z-index: 51;
     position: relative;
+  }
+
+  [data-edit-mode] [data-section][data-global="true"].bw-section-selected {
+    outline-color: #f59e0b;
   }
 
   [data-edit-mode] [data-section].bw-section-selected::before {
@@ -177,15 +200,31 @@
         <span class="bw-edit-toolbar__dot"></span>
         Edit Mode — Bochi Web
       </span>
-      <button class="bw-edit-toolbar__exit" type="button">Exit Edit Mode</button>
+      <div class="bw-edit-toolbar__actions">
+        <button class="bw-edit-toolbar__btn" id="bw-new-page-btn" type="button">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Page
+        </button>
+        <button class="bw-edit-toolbar__btn" id="bw-exit-btn" type="button">Exit Edit Mode</button>
+      </div>
     `;
     document.body.prepend(toolbar);
 
-    toolbar.querySelector('.bw-edit-toolbar__exit')!.addEventListener('click', () => {
+    document.getElementById('bw-exit-btn')!.addEventListener('click', () => {
       sessionStorage.removeItem('bw-edit-mode');
       const url = new URL(window.location.href);
       url.searchParams.delete('edit');
       window.location.href = url.toString();
+    });
+
+    // ── + New Page button ──
+    document.getElementById('bw-new-page-btn')!.addEventListener('click', () => {
+      deselectSection();
+      window.dispatchEvent(
+        new CustomEvent('section-selected', {
+          detail: { section: '__new_page__', isGlobal: false },
+        })
+      );
     });
 
     // ── Format section name: "how-it-works" → "How It Works" ──
@@ -200,7 +239,9 @@
     const sections = document.querySelectorAll<HTMLElement>('[data-section]');
     sections.forEach((el) => {
       const name = el.getAttribute('data-section') || '';
-      el.setAttribute('data-section-label', formatLabel(name));
+      const isGlobal = el.getAttribute('data-global') === 'true';
+      const label = isGlobal ? `🌐 ${formatLabel(name)}` : formatLabel(name);
+      el.setAttribute('data-section-label', label);
     });
 
     // ── Selection logic ──
@@ -214,9 +255,12 @@
       dimmer.classList.add('bw-active');
 
       const sectionName = el.getAttribute('data-section') || '';
+      const isGlobal = el.getAttribute('data-global') === 'true';
       document.body.setAttribute('data-section-selected', sectionName);
       window.dispatchEvent(
-        new CustomEvent('section-selected', { detail: { section: sectionName } })
+        new CustomEvent('section-selected', {
+          detail: { section: sectionName, isGlobal },
+        })
       );
     }
 
@@ -227,15 +271,16 @@
       dimmer.classList.remove('bw-active');
       document.body.removeAttribute('data-section-selected');
       window.dispatchEvent(
-        new CustomEvent('section-selected', { detail: { section: null } })
+        new CustomEvent('section-selected', { detail: { section: null, isGlobal: false } })
       );
     }
+
+    // Expose deselectSection globally so ChatPanel can call it
+    (window as any).__bwDeselectSection = deselectSection;
 
     // Click on a section to select it
     sections.forEach((el) => {
       el.addEventListener('click', (e) => {
-        // Don't select if clicking inside an already-selected section's interactive children
-        // (let the section itself handle it)
         if (selectedSection === el) return;
         e.preventDefault();
         e.stopPropagation();

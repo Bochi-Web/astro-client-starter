@@ -1,0 +1,781 @@
+---
+/**
+ * ChatPanel
+ * Slide-in chat panel that opens when a section is selected in edit mode.
+ * UI only — no Claude API connection. Listens for 'section-selected' events.
+ *
+ * data-section: none (this is an editor chrome component, not a page section)
+ */
+---
+
+<style is:global>
+  /* ── Panel container ── */
+  .bw-chat-panel {
+    position: fixed;
+    top: 40px; /* below edit toolbar */
+    right: 0;
+    bottom: 0;
+    width: 400px;
+    z-index: 9998; /* above dimmer, below toolbar */
+    display: flex;
+    flex-direction: column;
+    background: #fff;
+    box-shadow: -4px 0 24px rgba(0, 0, 0, 0.12);
+    font-family: system-ui, -apple-system, sans-serif;
+    transform: translateX(100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .bw-chat-panel.bw-open {
+    transform: translateX(0);
+  }
+
+  @media (max-width: 640px) {
+    .bw-chat-panel {
+      width: 100%;
+    }
+  }
+
+  /* ── Top bar ── */
+  .bw-chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    flex-shrink: 0;
+  }
+
+  .bw-chat-header__info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .bw-chat-header__title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .bw-chat-header__title svg {
+    flex-shrink: 0;
+  }
+
+  .bw-chat-header__global-warning {
+    font-size: 0.6875rem;
+    color: #d97706;
+    font-weight: 500;
+    padding-left: 1.5rem;
+  }
+
+  .bw-chat-header__close {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .bw-chat-header__close:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+  }
+
+  /* ── Messages area ── */
+  .bw-chat-messages {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .bw-chat-welcome {
+    text-align: center;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    margin-top: 2rem;
+  }
+
+  .bw-chat-bubble {
+    max-width: 85%;
+    padding: 0.625rem 0.875rem;
+    border-radius: 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    word-wrap: break-word;
+  }
+
+  .bw-chat-bubble--user {
+    align-self: flex-end;
+    background: var(--color-primary, #2563eb);
+    color: #fff;
+    border-bottom-right-radius: 0.25rem;
+  }
+
+  .bw-chat-bubble--assistant {
+    align-self: flex-start;
+    background: #f1f5f9;
+    color: #1e293b;
+    border-bottom-left-radius: 0.25rem;
+  }
+
+  .bw-chat-thinking {
+    align-self: flex-start;
+    display: flex;
+    gap: 0.25rem;
+    padding: 0.75rem 1rem;
+  }
+
+  .bw-chat-thinking__dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #94a3b8;
+    animation: bw-think-bounce 1.4s ease-in-out infinite;
+  }
+
+  .bw-chat-thinking__dot:nth-child(2) { animation-delay: 0.16s; }
+  .bw-chat-thinking__dot:nth-child(3) { animation-delay: 0.32s; }
+
+  @keyframes bw-think-bounce {
+    0%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-6px); }
+  }
+
+  /* ── Input area ── */
+  .bw-chat-input-area {
+    border-top: 1px solid #e2e8f0;
+    padding: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  /* URL reference chip area */
+  .bw-chat-attachments {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .bw-chat-attachments:empty {
+    display: none;
+  }
+
+  .bw-chat-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    max-width: 200px;
+  }
+
+  .bw-chat-chip--url {
+    background: #eff6ff;
+    color: #2563eb;
+  }
+
+  .bw-chat-chip--image {
+    background: #f0fdf4;
+    color: #16a34a;
+    padding-left: 0.25rem;
+  }
+
+  .bw-chat-chip__thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 0.25rem;
+    object-fit: cover;
+  }
+
+  .bw-chat-chip__text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bw-chat-chip__remove {
+    width: 14px;
+    height: 14px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    opacity: 0.6;
+    padding: 0;
+  }
+
+  .bw-chat-chip__remove:hover {
+    opacity: 1;
+  }
+
+  /* URL input popover */
+  .bw-chat-url-input {
+    display: none;
+    margin-bottom: 0.5rem;
+  }
+
+  .bw-chat-url-input.bw-visible {
+    display: flex;
+    gap: 0.375rem;
+    align-items: center;
+  }
+
+  .bw-chat-url-input input {
+    flex: 1;
+    padding: 0.375rem 0.625rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    outline: none;
+    color: #1e293b;
+  }
+
+  .bw-chat-url-input input:focus {
+    border-color: var(--color-primary, #2563eb);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  }
+
+  .bw-chat-url-input input::placeholder {
+    color: #94a3b8;
+  }
+
+  .bw-chat-url-input button {
+    padding: 0.375rem 0.625rem;
+    border: none;
+    border-radius: 0.375rem;
+    background: var(--color-primary, #2563eb);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  /* Textarea row */
+  .bw-chat-compose {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-end;
+  }
+
+  .bw-chat-textarea {
+    flex: 1;
+    resize: none;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.625rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #1e293b;
+    min-height: 40px;
+    max-height: 120px;
+    outline: none;
+    font-family: inherit;
+  }
+
+  .bw-chat-textarea:focus {
+    border-color: var(--color-primary, #2563eb);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  }
+
+  .bw-chat-textarea::placeholder {
+    color: #94a3b8;
+  }
+
+  .bw-chat-send {
+    width: 36px;
+    height: 36px;
+    border: none;
+    border-radius: 0.5rem;
+    background: var(--color-primary, #2563eb);
+    color: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  .bw-chat-send:hover {
+    background: var(--color-primary-dark, #1d4ed8);
+  }
+
+  .bw-chat-send:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* Action buttons row */
+  .bw-chat-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+  }
+
+  .bw-chat-action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    background: #fff;
+    color: #64748b;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .bw-chat-action-btn:hover {
+    background: #f8fafc;
+    color: #0f172a;
+    border-color: #cbd5e1;
+  }
+
+  .bw-chat-action-btn.bw-active {
+    background: #eff6ff;
+    color: #2563eb;
+    border-color: #bfdbfe;
+  }
+
+  /* Action type dropdown */
+  .bw-chat-action-type {
+    position: relative;
+    margin-left: auto;
+  }
+
+  .bw-chat-action-type__menu {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 4px);
+    right: 0;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    z-index: 10;
+  }
+
+  .bw-chat-action-type__menu.bw-visible {
+    display: block;
+  }
+
+  .bw-chat-action-type__option {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: none;
+    background: transparent;
+    text-align: left;
+    font-size: 0.75rem;
+    color: #1e293b;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .bw-chat-action-type__option:hover {
+    background: #f1f5f9;
+  }
+
+  .bw-chat-action-type__option.bw-selected {
+    color: #2563eb;
+    font-weight: 600;
+  }
+
+  .bw-chat-action-type__option small {
+    display: block;
+    color: #94a3b8;
+    font-weight: 400;
+    margin-top: 0.125rem;
+  }
+
+  /* Hidden file input */
+  #bw-image-file-input {
+    display: none;
+  }
+</style>
+
+<!-- Chat panel markup -->
+<div class="bw-chat-panel" id="bw-chat-panel">
+  <!-- Header -->
+  <div class="bw-chat-header">
+    <div class="bw-chat-header__info">
+      <div class="bw-chat-header__title" id="bw-chat-title">
+        <!-- icon + name injected by JS -->
+      </div>
+      <div class="bw-chat-header__global-warning" id="bw-chat-global-warning" style="display:none;">
+        Global — changes apply to all pages
+      </div>
+    </div>
+    <button class="bw-chat-header__close" id="bw-chat-close" type="button" aria-label="Close panel">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+
+  <!-- Messages -->
+  <div class="bw-chat-messages" id="bw-chat-messages">
+    <div class="bw-chat-welcome" id="bw-chat-welcome">
+      What would you like to change about this section?
+    </div>
+  </div>
+
+  <!-- Input area -->
+  <div class="bw-chat-input-area">
+    <!-- URL input popover -->
+    <div class="bw-chat-url-input" id="bw-url-input-row">
+      <input type="url" placeholder="Paste a website URL for reference" id="bw-url-input" />
+      <button type="button" id="bw-url-confirm">Add</button>
+    </div>
+
+    <!-- Attachment chips -->
+    <div class="bw-chat-attachments" id="bw-chat-attachments"></div>
+
+    <!-- Compose row -->
+    <div class="bw-chat-compose">
+      <textarea
+        class="bw-chat-textarea"
+        id="bw-chat-textarea"
+        placeholder="Describe your changes..."
+        rows="1"
+      ></textarea>
+      <button class="bw-chat-send" id="bw-chat-send" type="button" aria-label="Send message">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+      </button>
+    </div>
+
+    <!-- Action buttons -->
+    <div class="bw-chat-actions">
+      <button class="bw-chat-action-btn" id="bw-url-btn" type="button">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+        URL
+      </button>
+      <button class="bw-chat-action-btn" id="bw-image-btn" type="button">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+        Image
+      </button>
+
+      <!-- Action type toggle -->
+      <div class="bw-chat-action-type">
+        <button class="bw-chat-action-btn" id="bw-action-type-btn" type="button">
+          <span id="bw-action-type-label">Edit</span>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="bw-chat-action-type__menu" id="bw-action-type-menu">
+          <button class="bw-chat-action-type__option bw-selected" data-value="edit" type="button">
+            Edit
+            <small>Modify this section</small>
+          </button>
+          <button class="bw-chat-action-type__option" data-value="replace" type="button">
+            Replace
+            <small>Rebuild this section entirely</small>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden file input for image upload -->
+<input type="file" id="bw-image-file-input" accept="image/jpeg,image/png,image/webp" />
+
+<script>
+  (function initChatPanel() {
+    // Only run in edit mode
+    if (!sessionStorage.getItem('bw-edit-mode') && new URLSearchParams(window.location.search).get('edit') !== 'true') return;
+
+    // ── DOM refs ──
+    const panel = document.getElementById('bw-chat-panel')!;
+    const titleEl = document.getElementById('bw-chat-title')!;
+    const globalWarning = document.getElementById('bw-chat-global-warning')!;
+    const welcome = document.getElementById('bw-chat-welcome')!;
+    const messagesEl = document.getElementById('bw-chat-messages')!;
+    const textarea = document.getElementById('bw-chat-textarea') as HTMLTextAreaElement;
+    const sendBtn = document.getElementById('bw-chat-send') as HTMLButtonElement;
+    const closeBtn = document.getElementById('bw-chat-close')!;
+    const attachments = document.getElementById('bw-chat-attachments')!;
+
+    // URL input
+    const urlInputRow = document.getElementById('bw-url-input-row')!;
+    const urlInput = document.getElementById('bw-url-input') as HTMLInputElement;
+    const urlConfirm = document.getElementById('bw-url-confirm')!;
+    const urlBtn = document.getElementById('bw-url-btn')!;
+
+    // Image
+    const imageBtn = document.getElementById('bw-image-btn')!;
+    const fileInput = document.getElementById('bw-image-file-input') as HTMLInputElement;
+
+    // Action type
+    const actionTypeBtn = document.getElementById('bw-action-type-btn')!;
+    const actionTypeMenu = document.getElementById('bw-action-type-menu')!;
+    const actionTypeLabel = document.getElementById('bw-action-type-label')!;
+
+    // ── SVG icon templates ──
+    const pageIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+    const globeIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>`;
+    const plusIcon = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+
+    // ── State ──
+    let currentSection: string | null = null;
+    let actionType = 'edit';
+    let urlRefs: string[] = [];
+    let imageFiles: { name: string; dataUrl: string }[] = [];
+
+    // ── Format section name ──
+    function formatLabel(slug: string): string {
+      return slug
+        .split('-')
+        .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ');
+    }
+
+    // ── Open / close panel ──
+    function openPanel(section: string, isGlobal: boolean) {
+      currentSection = section;
+
+      // Clear previous conversation
+      messagesEl.innerHTML = '';
+      urlRefs = [];
+      imageFiles = [];
+      attachments.innerHTML = '';
+      urlInputRow.classList.remove('bw-visible');
+      textarea.value = '';
+      autoGrow();
+
+      // Set header
+      if (section === '__new_page__') {
+        titleEl.innerHTML = `${plusIcon} <span>New Page</span>`;
+        globalWarning.style.display = 'none';
+        welcome.textContent = 'Describe the new page you want to create.';
+      } else {
+        const icon = isGlobal ? globeIcon : pageIcon;
+        titleEl.innerHTML = `${icon} <span>${formatLabel(section)}</span>`;
+        globalWarning.style.display = isGlobal ? '' : 'none';
+        welcome.textContent = 'What would you like to change about this section?';
+      }
+      messagesEl.appendChild(welcome);
+
+      panel.classList.add('bw-open');
+      textarea.focus();
+    }
+
+    function closePanel() {
+      panel.classList.remove('bw-open');
+      currentSection = null;
+      // Deselect section via EditOverlay's exposed function
+      if (typeof (window as any).__bwDeselectSection === 'function') {
+        (window as any).__bwDeselectSection();
+      }
+    }
+
+    // ── Listen for section-selected events ──
+    window.addEventListener('section-selected', ((e: CustomEvent) => {
+      const { section, isGlobal } = e.detail;
+      if (section) {
+        openPanel(section, isGlobal);
+      } else {
+        panel.classList.remove('bw-open');
+        currentSection = null;
+      }
+    }) as EventListener);
+
+    // Close button
+    closeBtn.addEventListener('click', closePanel);
+
+    // ── Textarea auto-grow ──
+    function autoGrow() {
+      textarea.style.height = 'auto';
+      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+    }
+    textarea.addEventListener('input', autoGrow);
+
+    // ── Send message ──
+    function sendMessage() {
+      const text = textarea.value.trim();
+      if (!text) return;
+
+      // Hide welcome
+      welcome.style.display = 'none';
+
+      // Add user bubble
+      const userBubble = document.createElement('div');
+      userBubble.className = 'bw-chat-bubble bw-chat-bubble--user';
+      userBubble.textContent = text;
+      messagesEl.appendChild(userBubble);
+
+      // Clear input
+      textarea.value = '';
+      autoGrow();
+
+      // Scroll to bottom
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      // Show thinking indicator
+      const thinking = document.createElement('div');
+      thinking.className = 'bw-chat-thinking';
+      thinking.innerHTML = `
+        <span class="bw-chat-thinking__dot"></span>
+        <span class="bw-chat-thinking__dot"></span>
+        <span class="bw-chat-thinking__dot"></span>
+      `;
+      messagesEl.appendChild(thinking);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+
+      // After a brief delay, show placeholder assistant response
+      setTimeout(() => {
+        thinking.remove();
+        const assistantBubble = document.createElement('div');
+        assistantBubble.className = 'bw-chat-bubble bw-chat-bubble--assistant';
+        assistantBubble.textContent = 'This will be connected to Claude API in the next step.';
+        messagesEl.appendChild(assistantBubble);
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      }, 1200);
+    }
+
+    sendBtn.addEventListener('click', sendMessage);
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // ── URL reference ──
+    urlBtn.addEventListener('click', () => {
+      urlInputRow.classList.toggle('bw-visible');
+      if (urlInputRow.classList.contains('bw-visible')) {
+        urlInput.focus();
+      }
+    });
+
+    function addUrl() {
+      const url = urlInput.value.trim();
+      if (!url) return;
+      urlRefs.push(url);
+      renderAttachments();
+      urlInput.value = '';
+      urlInputRow.classList.remove('bw-visible');
+    }
+
+    urlConfirm.addEventListener('click', addUrl);
+    urlInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); addUrl(); }
+      if (e.key === 'Escape') { urlInputRow.classList.remove('bw-visible'); }
+    });
+
+    // ── Image upload ──
+    imageBtn.addEventListener('click', () => fileInput.click());
+
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        imageFiles.push({ name: file.name, dataUrl: reader.result as string });
+        renderAttachments();
+      };
+      reader.readAsDataURL(file);
+      fileInput.value = ''; // reset so same file can be re-selected
+    });
+
+    // ── Render attachment chips ──
+    function renderAttachments() {
+      attachments.innerHTML = '';
+
+      urlRefs.forEach((url, i) => {
+        const chip = document.createElement('span');
+        chip.className = 'bw-chat-chip bw-chat-chip--url';
+
+        let displayUrl = url;
+        try { displayUrl = new URL(url).hostname; } catch {}
+
+        chip.innerHTML = `
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>
+          <span class="bw-chat-chip__text">${displayUrl}</span>
+          <button class="bw-chat-chip__remove" type="button" aria-label="Remove URL">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        `;
+        chip.querySelector('.bw-chat-chip__remove')!.addEventListener('click', () => {
+          urlRefs.splice(i, 1);
+          renderAttachments();
+        });
+        attachments.appendChild(chip);
+      });
+
+      imageFiles.forEach((img, i) => {
+        const chip = document.createElement('span');
+        chip.className = 'bw-chat-chip bw-chat-chip--image';
+        chip.innerHTML = `
+          <img class="bw-chat-chip__thumb" src="${img.dataUrl}" alt="${img.name}" />
+          <span class="bw-chat-chip__text">${img.name}</span>
+          <button class="bw-chat-chip__remove" type="button" aria-label="Remove image">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        `;
+        chip.querySelector('.bw-chat-chip__remove')!.addEventListener('click', () => {
+          imageFiles.splice(i, 1);
+          renderAttachments();
+        });
+        attachments.appendChild(chip);
+      });
+    }
+
+    // ── Action type toggle ──
+    actionTypeBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      actionTypeMenu.classList.toggle('bw-visible');
+    });
+
+    actionTypeMenu.querySelectorAll('.bw-chat-action-type__option').forEach((opt) => {
+      opt.addEventListener('click', () => {
+        actionType = (opt as HTMLElement).dataset.value || 'edit';
+        actionTypeLabel.textContent = actionType === 'edit' ? 'Edit' : 'Replace';
+
+        // Update selected state
+        actionTypeMenu.querySelectorAll('.bw-chat-action-type__option').forEach((o) =>
+          o.classList.toggle('bw-selected', o === opt)
+        );
+        actionTypeMenu.classList.remove('bw-visible');
+      });
+    });
+
+    // Close action type menu when clicking elsewhere
+    document.addEventListener('click', () => {
+      actionTypeMenu.classList.remove('bw-visible');
+    });
+
+    // Prevent Escape from closing panel when URL input is open
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation(); // don't let EditOverlay's Escape handler fire
+        closePanel();
+      }
+    });
+  })();
+</script>
