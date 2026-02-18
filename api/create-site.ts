@@ -299,7 +299,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const githubToken = getEnv('GITHUB_TOKEN');
-    const vercelToken = getEnv('VERCEL_TOKEN');
+    const vercelToken = getEnv('BW_VERCEL_TOKEN');
 
     // Look up the client record
     const supabaseUrl = getEnv('SUPABASE_URL');
