@@ -1,0 +1,65 @@
+---
+/**
+ * How It Works
+ * Three-step process showing how customers engage with the business.
+ * Numbered steps with visual connectors between them.
+ *
+ * data-section="how-it-works"
+ */
+
+import SectionWrapper from '../ui/SectionWrapper.astro';
+
+const steps = [
+  {
+    number: '1',
+    title: 'Request a Quote',
+    description:
+      'Tell us about your project. Fill out our quick online form or give us a call — we respond within 24 hours with a detailed, no-obligation estimate.',
+  },
+  {
+    number: '2',
+    title: 'We Get to Work',
+    description:
+      'Once you approve the quote, we schedule at a time that works for you. Our team arrives on time with everything needed to get the job done right.',
+  },
+  {
+    number: '3',
+    title: 'Enjoy the Results',
+    description:
+      'We walk through the finished work with you to make sure everything meets your expectations. Your satisfaction is our top priority.',
+  },
+];
+---
+
+<SectionWrapper id="how-it-works" alt>
+  <!-- Section heading -->
+  <div class="text-center mb-12 md:mb-16">
+    <h2 class="text-3xl md:text-4xl font-heading font-bold text-secondary mb-4">
+      How It Works
+    </h2>
+    <p class="text-content-light text-lg max-w-2xl mx-auto">
+      Getting started is simple. Here's what to expect when you work with us.
+    </p>
+  </div>
+
+  <!-- Steps -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12 relative">
+    {/* Connector line (desktop only) */}
+    <div class="hidden md:block absolute top-12 left-[16.67%] right-[16.67%] h-0.5 bg-border" aria-hidden="true"></div>
+
+    {steps.map((step) => (
+      <div class="flex flex-col items-center text-center relative">
+        {/* Step number circle */}
+        <div class="w-24 h-24 rounded-full bg-primary text-white flex items-center justify-center text-3xl font-heading font-bold mb-6 relative z-10 shadow-md">
+          {step.number}
+        </div>
+        <h3 class="text-xl font-heading font-semibold text-secondary mb-3">
+          {step.title}
+        </h3>
+        <p class="text-content-light max-w-xs">
+          {step.description}
+        </p>
+      </div>
+    ))}
+  </div>
+</SectionWrapper>

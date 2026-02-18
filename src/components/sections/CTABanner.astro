@@ -1,0 +1,38 @@
+---
+/**
+ * CTA Banner
+ * Full-width call-to-action section with gradient background.
+ * Last section before the footer — designed to drive conversions.
+ *
+ * data-section="cta-banner"
+ */
+
+import { siteConfig } from '../../data/siteConfig';
+import Button from '../ui/Button.astro';
+---
+
+<section data-section="cta-banner" class="bg-primary relative overflow-hidden">
+  <!-- Subtle gradient overlay -->
+  <div class="absolute inset-0 bg-gradient-to-r from-primary-dark to-primary opacity-90"></div>
+
+  <div class="relative max-w-7xl mx-auto px-4 py-16 md:py-24 text-center">
+    <h2 class="text-3xl md:text-4xl font-heading font-bold text-white mb-4">
+      Ready to Get Started?
+    </h2>
+    <p class="text-lg text-white/90 max-w-2xl mx-auto mb-8">
+      Request your free, no-obligation quote today. We'll get back to you
+      within 24 hours with a detailed estimate for your project.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+      <Button href="/contact/" class="bg-white text-primary hover:bg-gray-100">
+        Get Your Free Quote
+      </Button>
+      <a
+        href={`tel:${siteConfig.phone.replace(/\D/g, '')}`}
+        class="text-white font-semibold text-lg hover:text-white/80 transition-colors"
+      >
+        Or call {siteConfig.phone}
+      </a>
+    </div>
+  </div>
+</section>

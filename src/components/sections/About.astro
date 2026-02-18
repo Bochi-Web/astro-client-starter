@@ -1,0 +1,79 @@
+---
+/**
+ * About / Why Choose Us
+ * Split layout with text on one side and image on the other.
+ * Includes key differentiators as bullet points and trust signals.
+ *
+ * data-section="about"
+ */
+
+import SectionWrapper from '../ui/SectionWrapper.astro';
+---
+
+<SectionWrapper id="about">
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+
+    <!-- Text content -->
+    <div>
+      <h2 class="text-3xl md:text-4xl font-heading font-bold text-secondary mb-6">
+        Why Homeowners Trust Us
+      </h2>
+      <p class="text-content-light text-lg mb-6 leading-relaxed">
+        With over a decade of experience serving the Cedar Rapids community,
+        we've built our reputation on honest pricing, dependable scheduling,
+        and craftsmanship that lasts. We treat every home like it's our own.
+      </p>
+      <p class="text-content-light mb-8 leading-relaxed">
+        Whether it's a quick repair or a full-scale project, our licensed and
+        insured team shows up on time, communicates clearly, and doesn't
+        leave until you're completely satisfied.
+      </p>
+
+      <!-- Key differentiators -->
+      <ul class="space-y-4">
+        <li class="flex items-start gap-3">
+          <svg class="w-6 h-6 text-accent flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+          </svg>
+          <div>
+            <strong class="text-secondary">Licensed &amp; Insured</strong>
+            <p class="text-content-light text-sm">Fully licensed professionals with comprehensive liability coverage.</p>
+          </div>
+        </li>
+        <li class="flex items-start gap-3">
+          <svg class="w-6 h-6 text-accent flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+          </svg>
+          <div>
+            <strong class="text-secondary">Transparent Pricing</strong>
+            <p class="text-content-light text-sm">Upfront quotes with no hidden fees or surprise charges.</p>
+          </div>
+        </li>
+        <li class="flex items-start gap-3">
+          <svg class="w-6 h-6 text-accent flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clip-rule="evenodd" />
+          </svg>
+          <div>
+            <strong class="text-secondary">Satisfaction Guaranteed</strong>
+            <p class="text-content-light text-sm">We stand behind every job with our 100% satisfaction guarantee.</p>
+          </div>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Image -->
+    <div class="relative">
+      <img
+        src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?w=800&q=80"
+        alt="Our team at work"
+        class="rounded-lg shadow-lg w-full h-auto object-cover aspect-[4/3]"
+        loading="lazy"
+      />
+      <!-- Trust badge overlay -->
+      <div class="absolute -bottom-6 -left-6 bg-primary text-white rounded-lg p-4 shadow-lg hidden md:block">
+        <div class="text-3xl font-heading font-bold">10+</div>
+        <div class="text-sm opacity-90">Years of Experience</div>
+      </div>
+    </div>
+  </div>
+</SectionWrapper>

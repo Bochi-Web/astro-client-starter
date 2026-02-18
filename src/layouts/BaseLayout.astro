@@ -12,6 +12,7 @@
 import '../styles/global.css';
 import { siteConfig } from '../data/siteConfig';
 import Navigation from '../components/sections/Navigation.astro';
+import Footer from '../components/sections/Footer.astro';
 
 interface Props {
   title: string;
@@ -41,5 +42,6 @@ const { title, description = `${siteConfig.businessName} — ${siteConfig.taglin
     <main>
       <slot />
     </main>
+    <Footer />
   </body>
 </html>

@@ -1,0 +1,33 @@
+---
+/**
+ * Stats / Social Proof
+ * Number blocks showing key business metrics.
+ * Dark background for visual contrast.
+ *
+ * data-section="stats"
+ */
+
+const stats = [
+  { number: '2,500+', label: 'Happy Customers' },
+  { number: '10+', label: 'Years in Business' },
+  { number: '15K+', label: 'Projects Completed' },
+  { number: '24/7', label: 'Customer Support' },
+];
+---
+
+<section data-section="stats" class="bg-secondary py-16 md:py-20">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      {stats.map((stat) => (
+        <div>
+          <div class="text-4xl md:text-5xl font-heading font-bold text-white mb-2">
+            {stat.number}
+          </div>
+          <div class="text-gray-300 text-sm md:text-base">
+            {stat.label}
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+</section>

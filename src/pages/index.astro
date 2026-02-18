@@ -1,15 +1,28 @@
 ---
 /**
  * Homepage
- * Renders all homepage sections in order.
- * Sections are added here as they are built.
+ * Renders all homepage sections in the order specified by the brief.
  */
 
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { siteConfig } from '../data/siteConfig';
 import Hero from '../components/sections/Hero.astro';
+import Services from '../components/sections/Services.astro';
+import About from '../components/sections/About.astro';
+import Stats from '../components/sections/Stats.astro';
+import HowItWorks from '../components/sections/HowItWorks.astro';
+import Testimonials from '../components/sections/Testimonials.astro';
+import FAQ from '../components/sections/FAQ.astro';
+import CTABanner from '../components/sections/CTABanner.astro';
 ---
 
 <BaseLayout title={`${siteConfig.businessName} — ${siteConfig.tagline}`}>
   <Hero />
+  <Services />
+  <About />
+  <Stats />
+  <HowItWorks />
+  <Testimonials />
+  <FAQ />
+  <CTABanner />
 </BaseLayout>

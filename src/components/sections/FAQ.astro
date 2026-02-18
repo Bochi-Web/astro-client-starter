@@ -1,0 +1,113 @@
+---
+/**
+ * FAQ
+ * Accordion-style frequently asked questions.
+ * Uses minimal vanilla JS for expand/collapse toggle.
+ *
+ * data-section="faq"
+ */
+
+import SectionWrapper from '../ui/SectionWrapper.astro';
+
+const faqs = [
+  {
+    question: 'How do I get a quote?',
+    answer:
+      'Simply fill out our online contact form or call us at (555) 123-4567. We\'ll ask a few questions about your project and provide a detailed, no-obligation estimate — usually within 24 hours.',
+  },
+  {
+    question: 'Are you licensed and insured?',
+    answer:
+      'Yes. We are fully licensed to operate in Iowa and carry comprehensive general liability and workers\' compensation insurance for your protection.',
+  },
+  {
+    question: 'What areas do you serve?',
+    answer:
+      'We serve Cedar Rapids and the surrounding metro area, including Marion, Hiawatha, Robins, and Ely. Contact us if you\'re unsure whether your location is in our service area.',
+  },
+  {
+    question: 'How far out are you scheduling?',
+    answer:
+      'Our scheduling timeline varies depending on the season and project scope. For most jobs, we can get started within 1–2 weeks. Emergency services are available for urgent situations.',
+  },
+  {
+    question: 'Do you offer warranties on your work?',
+    answer:
+      'Absolutely. All of our work is backed by a satisfaction guarantee, and most projects include a workmanship warranty. We\'ll go over the specifics during your estimate.',
+  },
+  {
+    question: 'What payment methods do you accept?',
+    answer:
+      'We accept cash, checks, all major credit cards, and bank transfers. For larger projects, we offer flexible payment plans — just ask during your consultation.',
+  },
+];
+---
+
+<SectionWrapper id="faq" alt>
+  <!-- Section heading -->
+  <div class="text-center mb-12 md:mb-16">
+    <h2 class="text-3xl md:text-4xl font-heading font-bold text-secondary mb-4">
+      Frequently Asked Questions
+    </h2>
+    <p class="text-content-light text-lg max-w-2xl mx-auto">
+      Got questions? We've got answers. If you don't see what you're looking
+      for, don't hesitate to reach out.
+    </p>
+  </div>
+
+  <!-- Accordion -->
+  <div class="max-w-3xl mx-auto space-y-3" id="faq-accordion">
+    {faqs.map((faq, index) => (
+      <div class="border border-border rounded-lg overflow-hidden">
+        <button
+          type="button"
+          class="faq-trigger w-full flex items-center justify-between px-6 py-4 text-left font-medium text-secondary hover:bg-surface-alt transition-colors cursor-pointer"
+          aria-expanded="false"
+          aria-controls={`faq-panel-${index}`}
+        >
+          <span>{faq.question}</span>
+          <svg
+            class="faq-chevron w-5 h-5 text-content-light flex-shrink-0 ml-4 transition-transform duration-200"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div
+          id={`faq-panel-${index}`}
+          class="faq-panel hidden px-6 pb-4"
+          role="region"
+        >
+          <p class="text-content-light leading-relaxed">{faq.answer}</p>
+        </div>
+      </div>
+    ))}
+  </div>
+</SectionWrapper>
+
+<!-- Minimal vanilla JS for FAQ accordion -->
+<script>
+  document.querySelectorAll('.faq-trigger').forEach((trigger) => {
+    trigger.addEventListener('click', () => {
+      const panel = trigger.nextElementSibling as HTMLElement;
+      const chevron = trigger.querySelector('.faq-chevron');
+      const isOpen = trigger.getAttribute('aria-expanded') === 'true';
+
+      // Close all other panels
+      document.querySelectorAll('.faq-trigger').forEach((otherTrigger) => {
+        if (otherTrigger !== trigger) {
+          otherTrigger.setAttribute('aria-expanded', 'false');
+          (otherTrigger.nextElementSibling as HTMLElement)?.classList.add('hidden');
+          otherTrigger.querySelector('.faq-chevron')?.classList.remove('rotate-180');
+        }
+      });
+
+      // Toggle clicked panel
+      trigger.setAttribute('aria-expanded', String(!isOpen));
+      panel?.classList.toggle('hidden');
+      chevron?.classList.toggle('rotate-180');
+    });
+  });
+</script>
