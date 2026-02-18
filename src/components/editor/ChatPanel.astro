@@ -419,6 +419,80 @@
   #bw-image-file-input {
     display: none;
   }
+
+  /* ── Edit action buttons (below assistant bubble) ── */
+  .bw-edit-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    align-self: flex-start;
+  }
+
+  .bw-edit-actions__btn {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 0.375rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+
+  .bw-edit-actions__btn--preview {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+  }
+
+  .bw-edit-actions__btn--preview:hover {
+    background: #1d4ed8;
+  }
+
+  .bw-edit-actions__btn--discard {
+    background: #f1f5f9;
+    color: #64748b;
+    border-color: #e2e8f0;
+  }
+
+  .bw-edit-actions__btn--discard:hover {
+    background: #e2e8f0;
+    color: #475569;
+  }
+
+  .bw-edit-actions__btn--approve {
+    background: #16a34a;
+    color: #fff;
+    border-color: #16a34a;
+  }
+
+  .bw-edit-actions__btn--approve:hover {
+    background: #15803d;
+  }
+
+  .bw-edit-actions__btn--revert {
+    background: transparent;
+    color: #dc2626;
+    border-color: #fecaca;
+  }
+
+  .bw-edit-actions__btn--revert:hover {
+    background: #fef2f2;
+  }
+
+  .bw-edit-actions__status {
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.375rem 0;
+  }
+
+  .bw-edit-actions__status--approved {
+    color: #16a34a;
+  }
+
+  .bw-edit-actions__status--discarded {
+    color: #94a3b8;
+  }
 </style>
 
 <!-- Chat panel markup -->
@@ -554,6 +628,15 @@
     // Store the latest edit result (for future preview/commit steps)
     (window as any).__bwLastEdit = null;
 
+    // Preview state machine
+    let editState: 'idle' | 'responded' | 'previewing' | 'approved' | 'discarded' = 'idle';
+    let editActionsContainer: HTMLElement | null = null;
+
+    // Staged edits array (persistent across section changes)
+    if (!(window as any).__bwStagedEdits) {
+      (window as any).__bwStagedEdits = [];
+    }
+
     // ── Format section name ──
     function formatLabel(slug: string): string {
       return slug
@@ -564,6 +647,11 @@
 
     // ── Open / close panel ──
     function openPanel(section: string, isGlobal: boolean) {
+      // Revert any active preview before switching sections
+      if (editState === 'previewing') {
+        handleRevert();
+      }
+
       currentSection = section;
       currentIsGlobal = isGlobal;
 
@@ -571,6 +659,13 @@
       messagesEl.innerHTML = '';
       conversationHistory = [];
       (window as any).__bwLastEdit = null;
+
+      // Reset edit state
+      editState = 'idle';
+      if (editActionsContainer) {
+        editActionsContainer.remove();
+        editActionsContainer = null;
+      }
       urlRefs = [];
       imageFiles = [];
       attachments.innerHTML = '';
@@ -651,6 +746,189 @@
       return thinking;
     }
 
+    // ── Extract renderable HTML from Astro component code ──
+    function extractPreviewHTML(astroCode: string): string {
+      let html = astroCode;
+
+      // 1. Strip frontmatter (--- ... ---)
+      html = html.replace(/^---[\s\S]*?---\n*/m, '');
+
+      // 2. Strip <script> and <style> tags and their contents
+      html = html.replace(/<script[\s\S]*?<\/script>/gi, '');
+      html = html.replace(/<style[\s\S]*?<\/style>/gi, '');
+
+      // 3. Strip Astro component tags (keep their children)
+      const componentNames = ['SectionWrapper', 'Button', 'Card', 'Fragment', 'BaseLayout', 'slot'];
+      for (const name of componentNames) {
+        html = html.replace(new RegExp(`<${name}[^>]*\\/?>`, 'gi'), '');
+        html = html.replace(new RegExp(`</${name}>`, 'gi'), '');
+      }
+
+      // 4. Strip Astro expressions { ... } (balanced braces, iterative)
+      let prev = '';
+      while (prev !== html) {
+        prev = html;
+        html = html.replace(/\{[^{}]*\}/g, '');
+      }
+
+      // 5. Clean up Astro-specific attributes
+      html = html.replace(/\s+(client:\w+|set:html|class:list|is:global|is:inline)/g, '');
+
+      // 6. Clean up excess whitespace
+      html = html.replace(/\n{3,}/g, '\n\n').trim();
+
+      return html;
+    }
+
+    // ── Button state machine ──
+    function renderEditButtons(state: string) {
+      if (editActionsContainer) {
+        editActionsContainer.remove();
+        editActionsContainer = null;
+      }
+
+      if (state === 'idle') return;
+
+      editActionsContainer = document.createElement('div');
+      editActionsContainer.className = 'bw-edit-actions';
+
+      if (state === 'responded') {
+        const previewBtn = document.createElement('button');
+        previewBtn.className = 'bw-edit-actions__btn bw-edit-actions__btn--preview';
+        previewBtn.textContent = 'Preview';
+        previewBtn.addEventListener('click', handlePreview);
+
+        const discardBtn = document.createElement('button');
+        discardBtn.className = 'bw-edit-actions__btn bw-edit-actions__btn--discard';
+        discardBtn.textContent = 'Discard';
+        discardBtn.addEventListener('click', handleDiscard);
+
+        editActionsContainer.append(previewBtn, discardBtn);
+      } else if (state === 'previewing') {
+        const approveBtn = document.createElement('button');
+        approveBtn.className = 'bw-edit-actions__btn bw-edit-actions__btn--approve';
+        approveBtn.textContent = 'Approve';
+        approveBtn.addEventListener('click', handleApprove);
+
+        const revertBtn = document.createElement('button');
+        revertBtn.className = 'bw-edit-actions__btn bw-edit-actions__btn--revert';
+        revertBtn.textContent = 'Revert';
+        revertBtn.addEventListener('click', handleRevert);
+
+        editActionsContainer.append(approveBtn, revertBtn);
+      } else if (state === 'approved') {
+        const status = document.createElement('span');
+        status.className = 'bw-edit-actions__status bw-edit-actions__status--approved';
+        status.textContent = 'Change approved. Ready to publish.';
+        editActionsContainer.appendChild(status);
+      } else if (state === 'discarded') {
+        const status = document.createElement('span');
+        status.className = 'bw-edit-actions__status bw-edit-actions__status--discarded';
+        status.textContent = 'Change discarded.';
+        editActionsContainer.appendChild(status);
+      }
+
+      messagesEl.appendChild(editActionsContainer);
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+
+    // ── Preview handlers ──
+    let suppressBarEvent = false;
+
+    function handlePreview() {
+      const edit = (window as any).__bwLastEdit;
+      if (!edit) return;
+
+      const html = extractPreviewHTML(edit.modifiedCode);
+
+      editState = 'previewing';
+      renderEditButtons(editState);
+
+      window.dispatchEvent(new CustomEvent('preview-activate', {
+        detail: { section: edit.section, html }
+      }));
+    }
+
+    function handleDiscard() {
+      if (editState === 'previewing') {
+        window.dispatchEvent(new CustomEvent('preview-deactivate', {
+          detail: { section: (window as any).__bwLastEdit?.section }
+        }));
+      }
+
+      (window as any).__bwLastEdit = null;
+      editState = 'discarded';
+      renderEditButtons(editState);
+    }
+
+    function handleApprove() {
+      const edit = (window as any).__bwLastEdit;
+      if (!edit) return;
+
+      // Add to staged edits
+      const stagedEdits = (window as any).__bwStagedEdits as any[];
+      const existingIndex = stagedEdits.findIndex((e: any) => e.section === edit.section);
+      const stagedEntry = {
+        filePath: edit.filePath,
+        originalCode: edit.originalCode,
+        modifiedCode: edit.modifiedCode,
+        section: edit.section,
+        description: conversationHistory.length >= 2
+          ? conversationHistory[conversationHistory.length - 2]?.content || 'Edit'
+          : 'Edit',
+        timestamp: Date.now(),
+      };
+
+      if (existingIndex >= 0) {
+        stagedEdits[existingIndex] = stagedEntry;
+      } else {
+        stagedEdits.push(stagedEntry);
+      }
+
+      // Notify EditOverlay to finalize preview visuals
+      if (!suppressBarEvent) {
+        window.dispatchEvent(new CustomEvent('preview-approve', {
+          detail: { section: edit.section }
+        }));
+      }
+
+      // Update toolbar counter
+      window.dispatchEvent(new CustomEvent('staged-edits-changed', {
+        detail: { count: stagedEdits.length }
+      }));
+
+      (window as any).__bwLastEdit = null;
+      editState = 'approved';
+      renderEditButtons(editState);
+    }
+
+    function handleRevert() {
+      const edit = (window as any).__bwLastEdit;
+      if (!edit) return;
+
+      if (!suppressBarEvent) {
+        window.dispatchEvent(new CustomEvent('preview-deactivate', {
+          detail: { section: edit.section }
+        }));
+      }
+
+      editState = 'responded';
+      renderEditButtons(editState);
+    }
+
+    // Listen for approve/revert from EditOverlay's floating action bar
+    window.addEventListener('preview-bar-approve', (() => {
+      suppressBarEvent = true;
+      handleApprove();
+      suppressBarEvent = false;
+    }) as EventListener);
+
+    window.addEventListener('preview-bar-revert', (() => {
+      suppressBarEvent = true;
+      handleRevert();
+      suppressBarEvent = false;
+    }) as EventListener);
+
     // ── Send message to API ──
     async function sendMessage() {
       const text = textarea.value.trim();
@@ -705,7 +983,7 @@
             { role: 'assistant', content: JSON.stringify({ explanation: data.message, code: data.modifiedCode }) }
           );
 
-          // Store the edit result for future preview/commit
+          // Store the edit result
           (window as any).__bwLastEdit = {
             section: currentSection,
             filePath: data.filePath,
@@ -713,11 +991,9 @@
             originalCode: data.originalCode,
           };
 
-          console.log('[ChatPanel] Edit result stored:', {
-            section: currentSection,
-            filePath: data.filePath,
-            codeLength: data.modifiedCode?.length,
-          });
+          // Show Preview/Discard buttons
+          editState = 'responded';
+          renderEditButtons(editState);
         } else {
           addBubble(data.message || 'Something went wrong. Please try again.', 'error');
         }

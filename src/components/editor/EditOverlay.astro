@@ -163,10 +163,121 @@
   .bw-edit-dimmer.bw-active {
     display: block;
   }
+
+  /* ── Preview state: green dashed border ── */
+  [data-edit-mode] [data-section].bw-section-previewing {
+    outline: 3px dashed #16a34a;
+    outline-offset: -3px;
+    z-index: 51;
+    position: relative;
+  }
+
+  [data-edit-mode] [data-section].bw-section-previewing::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(22, 163, 74, 0.04);
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* ── Approved flash: solid green border that fades ── */
+  [data-edit-mode] [data-section].bw-section-approved {
+    outline: 3px solid #16a34a;
+    outline-offset: -3px;
+    z-index: 51;
+    position: relative;
+    animation: bw-approved-fade 1.5s ease-out forwards;
+  }
+
+  @keyframes bw-approved-fade {
+    0% { outline-color: #16a34a; }
+    70% { outline-color: #16a34a; }
+    100% { outline-color: transparent; }
+  }
+
+  /* ── Floating action bar ── */
+  .bw-preview-action-bar {
+    display: none;
+    position: fixed;
+    z-index: 9997;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    font-family: system-ui, -apple-system, sans-serif;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .bw-preview-action-bar.bw-visible {
+    display: flex;
+  }
+
+  .bw-preview-action-bar__label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #16a34a;
+    margin-right: 0.25rem;
+  }
+
+  .bw-preview-action-bar__btn {
+    padding: 0.375rem 0.875rem;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .bw-preview-action-bar__btn--approve {
+    background: #16a34a;
+    color: #fff;
+  }
+
+  .bw-preview-action-bar__btn--approve:hover {
+    background: #15803d;
+  }
+
+  .bw-preview-action-bar__btn--revert {
+    background: transparent;
+    color: #475569;
+    border-color: #cbd5e1;
+  }
+
+  .bw-preview-action-bar__btn--revert:hover {
+    background: #f1f5f9;
+  }
+
+  /* ── Staged edits counter in toolbar ── */
+  .bw-edit-toolbar__staged {
+    display: none;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    background: rgba(22, 163, 74, 0.2);
+    color: #4ade80;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  .bw-edit-toolbar__staged.bw-has-edits {
+    display: inline-flex;
+  }
 </style>
 
 <!-- Dimmer overlay (sits behind selected section) -->
 <div class="bw-edit-dimmer" id="bw-edit-dimmer"></div>
+
+<!-- Floating preview action bar -->
+<div class="bw-preview-action-bar" id="bw-preview-action-bar">
+  <span class="bw-preview-action-bar__label">Preview</span>
+  <button class="bw-preview-action-bar__btn bw-preview-action-bar__btn--approve" id="bw-bar-approve" type="button">Approve</button>
+  <button class="bw-preview-action-bar__btn bw-preview-action-bar__btn--revert" id="bw-bar-revert" type="button">Revert</button>
+</div>
 
 <script>
   (function initEditOverlay() {
@@ -201,6 +312,7 @@
         Edit Mode — Bochi Web
       </span>
       <div class="bw-edit-toolbar__actions">
+        <span class="bw-edit-toolbar__staged" id="bw-staged-counter"></span>
         <button class="bw-edit-toolbar__btn" id="bw-new-page-btn" type="button">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New Page
@@ -293,6 +405,134 @@
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') deselectSection();
     });
+
+    // ── Preview system ──
+    const actionBar = document.getElementById('bw-preview-action-bar')!;
+    const barApproveBtn = document.getElementById('bw-bar-approve')!;
+    const barRevertBtn = document.getElementById('bw-bar-revert')!;
+    const stagedCounter = document.getElementById('bw-staged-counter')!;
+
+    let previewedSection: HTMLElement | null = null;
+    let previewOriginalHTML: string | null = null;
+    let scrollHandler: (() => void) | null = null;
+
+    function positionActionBar(sectionEl: HTMLElement) {
+      const rect = sectionEl.getBoundingClientRect();
+      const barHeight = actionBar.offsetHeight;
+      const barWidth = actionBar.offsetWidth;
+
+      // Position at bottom-center of the section
+      let top = rect.bottom - barHeight - 12;
+      let left = rect.left + (rect.width / 2) - (barWidth / 2);
+
+      // Clamp to viewport
+      top = Math.max(40, Math.min(top, window.innerHeight - barHeight - 8));
+      left = Math.max(8, Math.min(left, window.innerWidth - barWidth - 8));
+
+      // Avoid overlap with chat panel (400px on the right)
+      const chatPanel = document.getElementById('bw-chat-panel');
+      if (chatPanel?.classList.contains('bw-open')) {
+        const chatLeft = window.innerWidth - 400;
+        if (left + barWidth > chatLeft - 8) {
+          left = chatLeft - barWidth - 16;
+        }
+      }
+
+      actionBar.style.top = top + 'px';
+      actionBar.style.left = left + 'px';
+    }
+
+    // Preview activate: inject HTML, show green border, show floating bar
+    window.addEventListener('preview-activate', ((e: CustomEvent) => {
+      const { section, html } = e.detail;
+      const sectionEl = document.querySelector<HTMLElement>(`[data-section="${section}"]`);
+      if (!sectionEl) return;
+
+      previewedSection = sectionEl;
+      previewOriginalHTML = sectionEl.innerHTML;
+
+      sectionEl.innerHTML = html;
+      sectionEl.classList.remove('bw-section-selected');
+      sectionEl.classList.add('bw-section-previewing');
+
+      actionBar.classList.add('bw-visible');
+      requestAnimationFrame(() => positionActionBar(sectionEl));
+
+      scrollHandler = () => positionActionBar(sectionEl);
+      window.addEventListener('scroll', scrollHandler, { passive: true });
+      window.addEventListener('resize', scrollHandler, { passive: true });
+    }) as EventListener);
+
+    // Preview deactivate (revert): restore original HTML, remove green styling
+    window.addEventListener('preview-deactivate', ((e: CustomEvent) => {
+      if (!previewedSection || previewOriginalHTML === null) return;
+
+      previewedSection.innerHTML = previewOriginalHTML;
+      previewedSection.classList.remove('bw-section-previewing');
+      previewedSection.classList.add('bw-section-selected');
+
+      actionBar.classList.remove('bw-visible');
+
+      if (scrollHandler) {
+        window.removeEventListener('scroll', scrollHandler);
+        window.removeEventListener('resize', scrollHandler);
+        scrollHandler = null;
+      }
+
+      previewedSection = null;
+      previewOriginalHTML = null;
+    }) as EventListener);
+
+    // Preview approve: keep new HTML, green flash animation
+    window.addEventListener('preview-approve', ((e: CustomEvent) => {
+      if (!previewedSection) return;
+
+      previewedSection.classList.remove('bw-section-previewing');
+      previewedSection.classList.add('bw-section-approved');
+
+      actionBar.classList.remove('bw-visible');
+
+      if (scrollHandler) {
+        window.removeEventListener('scroll', scrollHandler);
+        window.removeEventListener('resize', scrollHandler);
+        scrollHandler = null;
+      }
+
+      const el = previewedSection;
+      setTimeout(() => {
+        el.classList.remove('bw-section-approved', 'bw-section-selected');
+      }, 1500);
+
+      previewedSection = null;
+      previewOriginalHTML = null;
+    }) as EventListener);
+
+    // Floating bar button handlers
+    barApproveBtn.addEventListener('click', () => {
+      if (!previewedSection) return;
+      window.dispatchEvent(new CustomEvent('preview-bar-approve', {
+        detail: { section: previewedSection.getAttribute('data-section') }
+      }));
+    });
+
+    barRevertBtn.addEventListener('click', () => {
+      if (!previewedSection) return;
+      window.dispatchEvent(new CustomEvent('preview-bar-revert', {
+        detail: { section: previewedSection.getAttribute('data-section') }
+      }));
+    });
+
+    // Staged edits counter
+    window.addEventListener('staged-edits-changed', ((e: CustomEvent) => {
+      const count = e.detail.count;
+      if (count > 0) {
+        stagedCounter.textContent = `${count} change${count !== 1 ? 's' : ''} staged`;
+        stagedCounter.classList.add('bw-has-edits');
+      } else {
+        stagedCounter.textContent = '';
+        stagedCounter.classList.remove('bw-has-edits');
+      }
+    }) as EventListener);
 
     // ── Persist edit mode on internal navigation ──
     document.addEventListener('click', (e) => {

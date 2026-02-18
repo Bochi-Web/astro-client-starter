@@ -125,63 +125,57 @@ async function callClaude(
   conversationHistory: ConversationMessage[],
   referenceImage?: string | null
 ): Promise<{ explanation: string; code: string }> {
-  const apiKey = getEnv('ANTHROPIC_API_KEY');
+  const apiKey = getEnv('OPENROUTER_API_KEY');
 
-  // Build messages array with conversation history
-  const messages: any[] = [];
+  // Build messages array: system message first, then conversation history
+  const messages: any[] = [
+    { role: 'system', content: SYSTEM_PROMPT },
+  ];
 
   for (const msg of conversationHistory) {
     messages.push({ role: msg.role, content: msg.content });
   }
 
-  // Build the current user message content blocks
+  // Build the current user message content blocks (OpenAI vision format)
   const contentBlocks: any[] = [];
 
-  // If there's a reference image, add it as an image block
+  // If there's a reference image, add it as an image_url block
   if (referenceImage) {
-    // Extract base64 data and media type from data URL
-    const match = referenceImage.match(/^data:(image\/\w+);base64,(.+)$/);
-    if (match) {
-      contentBlocks.push({
-        type: 'image',
-        source: {
-          type: 'base64',
-          media_type: match[1],
-          data: match[2],
-        },
-      });
-    }
+    contentBlocks.push({
+      type: 'image_url',
+      image_url: { url: referenceImage },
+    });
   }
 
   contentBlocks.push({ type: 'text', text: userMessage });
 
   messages.push({ role: 'user', content: contentBlocks });
 
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://bochi-web.com',
+      'X-Title': 'Bochi Web Editor',
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'anthropic/claude-sonnet-4',
       max_tokens: 4096,
-      system: SYSTEM_PROMPT,
       messages,
     }),
   });
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(`Claude API error: ${response.status} — ${errorText}`);
+    throw new Error(`OpenRouter API error: ${response.status} — ${errorText}`);
   }
 
   const data = await response.json();
-  const text = data.content?.[0]?.text;
+  const text = data.choices?.[0]?.message?.content;
 
   if (!text) {
-    throw new Error('Empty response from Claude API');
+    throw new Error('Empty response from OpenRouter API');
   }
 
   // Parse the JSON response
