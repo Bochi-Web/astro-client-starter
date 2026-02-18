@@ -267,11 +267,13 @@ function buildVercelJson(
     return JSON.stringify({ redirects: [] }, null, 2);
   }
 
-  const redirects = redirectMap.map((r) => ({
-    source: r.old_path,
-    destination: r.new_path,
-    statusCode: 301,
-  }));
+  const redirects = redirectMap
+    .filter((r) => r.old_path !== r.new_path) // Skip self-redirects
+    .map((r) => ({
+      source: r.old_path,
+      destination: r.new_path,
+      statusCode: 301,
+    }));
 
   return JSON.stringify({ redirects }, null, 2);
 }
