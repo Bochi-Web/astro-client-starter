@@ -88,6 +88,7 @@ interface ConversationMessage {
 interface RequestBody {
   message: string;
   conversationHistory: ConversationMessage[];
+  referenceImages?: string[]; // base64 data URLs for vision
 }
 
 // ── Request handler ──
@@ -110,7 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     const body = req.body as RequestBody;
-    const { message, conversationHistory = [] } = body;
+    const { message, conversationHistory = [], referenceImages } = body;
 
     if (!message) {
       return res.status(400).json({
@@ -130,7 +131,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       messages.push({ role: msg.role, content: msg.content });
     }
 
-    messages.push({ role: 'user', content: message });
+    // Build user message with optional image content blocks
+    if (referenceImages && referenceImages.length > 0) {
+      const contentBlocks: any[] = [];
+      for (const img of referenceImages) {
+        contentBlocks.push({ type: 'image_url', image_url: { url: img } });
+      }
+      contentBlocks.push({ type: 'text', text: message });
+      messages.push({ role: 'user', content: contentBlocks });
+    } else {
+      messages.push({ role: 'user', content: message });
+    }
 
     // Call OpenRouter
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {

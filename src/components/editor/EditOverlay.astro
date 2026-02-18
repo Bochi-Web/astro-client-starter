@@ -676,13 +676,46 @@
     const loginError = document.getElementById('bw-login-error')!;
 
     const existingToken = sessionStorage.getItem('bw-auth-token');
+    const urlToken = params.get('token');
 
     if (existingToken) {
+      // Already authenticated from a previous session
       (window as any).__bwAuthToken = existingToken;
       activateEditor();
+    } else if (urlToken) {
+      // One-time token from the Command Center — validate it
+      validateUrlToken(urlToken);
     } else {
+      // No token — show login screen
       loginOverlay.classList.add('bw-visible');
       loginForm.addEventListener('submit', handleLogin);
+    }
+
+    async function validateUrlToken(token: string) {
+      try {
+        const response = await fetch(`/api/auth-token?token=${encodeURIComponent(token)}`);
+        const data = await response.json();
+
+        if (data.valid && data.sessionToken) {
+          sessionStorage.setItem('bw-auth-token', data.sessionToken);
+          (window as any).__bwAuthToken = data.sessionToken;
+
+          // Remove token from URL bar (don't leave it in history)
+          const cleanUrl = new URL(window.location.href);
+          cleanUrl.searchParams.delete('token');
+          history.replaceState(null, '', cleanUrl.toString());
+
+          activateEditor();
+        } else {
+          // Token invalid or expired — fall back to login screen
+          loginOverlay.classList.add('bw-visible');
+          loginForm.addEventListener('submit', handleLogin);
+        }
+      } catch {
+        // Network error — fall back to login screen
+        loginOverlay.classList.add('bw-visible');
+        loginForm.addEventListener('submit', handleLogin);
+      }
     }
 
     async function handleLogin(e: Event) {
