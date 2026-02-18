@@ -13,6 +13,7 @@ import '../styles/global.css';
 import { siteConfig } from '../data/siteConfig';
 import Navigation from '../components/sections/Navigation.astro';
 import Footer from '../components/sections/Footer.astro';
+import EditOverlay from '../components/editor/EditOverlay.astro';
 
 interface Props {
   title: string;
@@ -43,5 +44,6 @@ const { title, description = `${siteConfig.businessName} — ${siteConfig.taglin
       <slot />
     </main>
     <Footer />
+    <EditOverlay />
   </body>
 </html>
