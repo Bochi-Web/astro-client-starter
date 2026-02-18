@@ -301,11 +301,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const githubToken = getEnv('GITHUB_TOKEN');
     const vercelToken = getEnv('BW_VERCEL_TOKEN');
 
-    // Look up the client record
+    // Look up the client record (pass user's token so RLS sees an authenticated user)
     const supabaseUrl = getEnv('SUPABASE_URL');
     const supabaseKey = getEnv('SUPABASE_ANON_KEY');
+    const userToken = (req.headers.authorization || '').replace('Bearer ', '');
     const supabase = createClient(supabaseUrl, supabaseKey, {
       auth: { persistSession: false, autoRefreshToken: false },
+      global: { headers: { Authorization: `Bearer ${userToken}` } },
     });
 
     const { data: clientRecord, error: lookupError } = await supabase
