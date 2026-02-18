@@ -23,24 +23,24 @@ export const siteConfig = {
   },
   services: [
     {
-      title: "Service One",
+      title: "Residential Cleaning",
       slug: "service-one",
       description:
-        "Brief description of this service for the homepage card.",
+        "We'll make your home shine with our thorough, eco-friendly cleaning services. Regular maintenance or deep clean, we've got you covered.",
       icon: "wrench",
     },
     {
-      title: "Service Two",
+      title: "Property Maintenance",
       slug: "service-two",
       description:
-        "Brief description of this service for the homepage card.",
+        "Keep your property in peak condition year-round. From seasonal upkeep to preventive repairs, we handle the details so you don't have to.",
       icon: "chart",
     },
     {
-      title: "Service Three",
+      title: "Home Protection",
       slug: "service-three",
       description:
-        "Brief description of this service for the homepage card.",
+        "Comprehensive protection plans that safeguard your biggest investment. Inspections, monitoring, and rapid response when you need it most.",
       icon: "shield",
     },
   ],
