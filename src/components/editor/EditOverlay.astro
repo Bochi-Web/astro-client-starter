@@ -267,6 +267,336 @@
   .bw-edit-toolbar__staged.bw-has-edits {
     display: inline-flex;
   }
+
+  /* ── Publish button in toolbar ── */
+  .bw-edit-toolbar__publish {
+    display: none;
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #22c55e;
+    border-radius: 0.375rem;
+    background: #16a34a;
+    color: #fff;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .bw-edit-toolbar__publish.bw-visible {
+    display: inline-flex;
+  }
+
+  .bw-edit-toolbar__publish:hover {
+    background: #15803d;
+  }
+
+  .bw-edit-toolbar__publish:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* ── Publish confirmation modal ── */
+  .bw-publish-modal-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(4px);
+    align-items: center;
+    justify-content: center;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  .bw-publish-modal-backdrop.bw-visible {
+    display: flex;
+  }
+
+  .bw-publish-modal {
+    background: #fff;
+    border-radius: 0.75rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 480px;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .bw-publish-modal__header {
+    padding: 1.25rem 1.5rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  .bw-publish-modal__title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0;
+  }
+
+  .bw-publish-modal__subtitle {
+    font-size: 0.8125rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+  }
+
+  .bw-publish-modal__body {
+    padding: 1rem 1.5rem;
+    overflow-y: auto;
+    flex: 1;
+  }
+
+  .bw-publish-modal__list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.625rem;
+  }
+
+  .bw-publish-modal__item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.625rem;
+    padding: 0.625rem 0.75rem;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+  }
+
+  .bw-publish-modal__item-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    color: #64748b;
+    margin-top: 1px;
+  }
+
+  .bw-publish-modal__item-info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .bw-publish-modal__item-section {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .bw-publish-modal__item-desc {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-top: 0.125rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .bw-publish-modal__footer {
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+  }
+
+  .bw-publish-modal__btn {
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .bw-publish-modal__btn--cancel {
+    background: #f1f5f9;
+    color: #475569;
+    border-color: #e2e8f0;
+  }
+
+  .bw-publish-modal__btn--cancel:hover {
+    background: #e2e8f0;
+  }
+
+  .bw-publish-modal__btn--publish {
+    background: #16a34a;
+    color: #fff;
+  }
+
+  .bw-publish-modal__btn--publish:hover {
+    background: #15803d;
+  }
+
+  .bw-publish-modal__btn--publish:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .bw-publish-modal__spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: bw-spin 0.6s linear infinite;
+  }
+
+  @keyframes bw-spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* Success state */
+  .bw-publish-modal__success {
+    text-align: center;
+    padding: 1.5rem 0;
+  }
+
+  .bw-publish-modal__success-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #dcfce7;
+    color: #16a34a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1rem;
+  }
+
+  .bw-publish-modal__success-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.375rem;
+  }
+
+  .bw-publish-modal__success-text {
+    font-size: 0.8125rem;
+    color: #64748b;
+    margin-bottom: 1rem;
+  }
+
+  .bw-publish-modal__success-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+    color: #2563eb;
+    text-decoration: none;
+  }
+
+  .bw-publish-modal__success-link:hover {
+    text-decoration: underline;
+  }
+
+  /* ── Login overlay ── */
+  .bw-login-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 10001;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+    align-items: center;
+    justify-content: center;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+
+  .bw-login-overlay.bw-visible {
+    display: flex;
+  }
+
+  .bw-login-card {
+    background: #fff;
+    border-radius: 0.75rem;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+    width: 90%;
+    max-width: 380px;
+    padding: 2rem;
+  }
+
+  .bw-login-card__title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    text-align: center;
+    margin-bottom: 0.25rem;
+  }
+
+  .bw-login-card__subtitle {
+    font-size: 0.8125rem;
+    color: #64748b;
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .bw-login-card__field {
+    margin-bottom: 1rem;
+  }
+
+  .bw-login-card__label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: #334155;
+    margin-bottom: 0.375rem;
+  }
+
+  .bw-login-card__input {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    color: #0f172a;
+    background: #fff;
+    transition: border-color 0.15s;
+    box-sizing: border-box;
+  }
+
+  .bw-login-card__input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  .bw-login-card__btn {
+    width: 100%;
+    padding: 0.625rem 1rem;
+    border: none;
+    border-radius: 0.375rem;
+    background: #0f172a;
+    color: #fff;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .bw-login-card__btn:hover {
+    background: #1e293b;
+  }
+
+  .bw-login-card__btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .bw-login-card__error {
+    color: #ef4444;
+    font-size: 0.8125rem;
+    text-align: center;
+    margin-top: 0.75rem;
+    min-height: 1.25rem;
+  }
 </style>
 
 <!-- Dimmer overlay (sits behind selected section) -->
@@ -277,6 +607,43 @@
   <span class="bw-preview-action-bar__label">Preview</span>
   <button class="bw-preview-action-bar__btn bw-preview-action-bar__btn--approve" id="bw-bar-approve" type="button">Approve</button>
   <button class="bw-preview-action-bar__btn bw-preview-action-bar__btn--revert" id="bw-bar-revert" type="button">Revert</button>
+</div>
+
+<!-- Publish confirmation modal -->
+<div class="bw-publish-modal-backdrop" id="bw-publish-modal-backdrop">
+  <div class="bw-publish-modal">
+    <div class="bw-publish-modal__header">
+      <div class="bw-publish-modal__title" id="bw-publish-title">Publish Changes</div>
+      <div class="bw-publish-modal__subtitle" id="bw-publish-subtitle"></div>
+    </div>
+    <div class="bw-publish-modal__body" id="bw-publish-body">
+      <ul class="bw-publish-modal__list" id="bw-publish-list"></ul>
+    </div>
+    <div class="bw-publish-modal__footer" id="bw-publish-footer">
+      <button class="bw-publish-modal__btn bw-publish-modal__btn--cancel" id="bw-publish-cancel" type="button">Cancel</button>
+      <button class="bw-publish-modal__btn bw-publish-modal__btn--publish" id="bw-publish-confirm" type="button">Publish Now</button>
+    </div>
+  </div>
+</div>
+
+<!-- Login overlay -->
+<div class="bw-login-overlay" id="bw-login-overlay">
+  <div class="bw-login-card">
+    <div class="bw-login-card__title">Bochi Web Editor</div>
+    <div class="bw-login-card__subtitle">Sign in to edit this site</div>
+    <form id="bw-login-form">
+      <div class="bw-login-card__field">
+        <label class="bw-login-card__label" for="bw-login-email">Email</label>
+        <input class="bw-login-card__input" id="bw-login-email" type="email" required autocomplete="email" placeholder="you@example.com" />
+      </div>
+      <div class="bw-login-card__field">
+        <label class="bw-login-card__label" for="bw-login-password">Password</label>
+        <input class="bw-login-card__input" id="bw-login-password" type="password" required autocomplete="current-password" />
+      </div>
+      <button class="bw-login-card__btn" id="bw-login-btn" type="submit">Sign In</button>
+      <div class="bw-login-card__error" id="bw-login-error"></div>
+    </form>
+  </div>
 </div>
 
 <script>
@@ -300,6 +667,58 @@
       history.replaceState(null, '', url.toString());
     }
 
+    // ── Auth gate ──
+    const loginOverlay = document.getElementById('bw-login-overlay')!;
+    const loginForm = document.getElementById('bw-login-form')!;
+    const loginEmail = document.getElementById('bw-login-email') as HTMLInputElement;
+    const loginPassword = document.getElementById('bw-login-password') as HTMLInputElement;
+    const loginBtn = document.getElementById('bw-login-btn') as HTMLButtonElement;
+    const loginError = document.getElementById('bw-login-error')!;
+
+    const existingToken = sessionStorage.getItem('bw-auth-token');
+
+    if (existingToken) {
+      (window as any).__bwAuthToken = existingToken;
+      activateEditor();
+    } else {
+      loginOverlay.classList.add('bw-visible');
+      loginForm.addEventListener('submit', handleLogin);
+    }
+
+    async function handleLogin(e: Event) {
+      e.preventDefault();
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Signing in\u2026';
+      loginError.textContent = '';
+
+      try {
+        const response = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: loginEmail.value.trim(),
+            password: loginPassword.value,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Invalid credentials');
+        }
+
+        sessionStorage.setItem('bw-auth-token', data.token);
+        (window as any).__bwAuthToken = data.token;
+        loginOverlay.classList.remove('bw-visible');
+        activateEditor();
+      } catch (err: any) {
+        loginError.textContent = err.message;
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Sign In';
+      }
+    }
+
+    function activateEditor() {
     // ── Mark body ──
     document.body.setAttribute('data-edit-mode', 'true');
 
@@ -313,6 +732,10 @@
       </span>
       <div class="bw-edit-toolbar__actions">
         <span class="bw-edit-toolbar__staged" id="bw-staged-counter"></span>
+        <button class="bw-edit-toolbar__publish" id="bw-publish-btn" type="button">
+          Publish
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+        </button>
         <button class="bw-edit-toolbar__btn" id="bw-new-page-btn" type="button">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           New Page
@@ -324,6 +747,8 @@
 
     document.getElementById('bw-exit-btn')!.addEventListener('click', () => {
       sessionStorage.removeItem('bw-edit-mode');
+      sessionStorage.removeItem('bw-auth-token');
+      (window as any).__bwAuthToken = null;
       const url = new URL(window.location.href);
       url.searchParams.delete('edit');
       window.location.href = url.toString();
@@ -522,17 +947,163 @@
       }));
     });
 
-    // Staged edits counter
-    window.addEventListener('staged-edits-changed', ((e: CustomEvent) => {
-      const count = e.detail.count;
+    // Staged edits counter + publish button visibility
+    const publishBtn = document.getElementById('bw-publish-btn')!;
+
+    function updateToolbarCounts() {
+      const edits = (window as any).__bwStagedEdits || [];
+      const count = edits.length;
       if (count > 0) {
         stagedCounter.textContent = `${count} change${count !== 1 ? 's' : ''} staged`;
         stagedCounter.classList.add('bw-has-edits');
+        publishBtn.classList.add('bw-visible');
       } else {
         stagedCounter.textContent = '';
         stagedCounter.classList.remove('bw-has-edits');
+        publishBtn.classList.remove('bw-visible');
       }
+    }
+
+    window.addEventListener('staged-edits-changed', (() => {
+      updateToolbarCounts();
     }) as EventListener);
+
+    // ── Publish system ──
+    const modalBackdrop = document.getElementById('bw-publish-modal-backdrop')!;
+    const publishTitle = document.getElementById('bw-publish-title')!;
+    const publishSubtitle = document.getElementById('bw-publish-subtitle')!;
+    const publishBody = document.getElementById('bw-publish-body')!;
+    const publishList = document.getElementById('bw-publish-list')!;
+    const publishFooter = document.getElementById('bw-publish-footer')!;
+    const publishCancel = document.getElementById('bw-publish-cancel')!;
+    const publishConfirm = document.getElementById('bw-publish-confirm')!;
+
+    function formatSectionName(slug: string): string {
+      return slug.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+
+    function buildCommitMessage(edits: any[]): string {
+      const sectionNames = edits.map((e: any) => formatSectionName(e.section));
+      const unique = [...new Set(sectionNames)];
+      return `Edit: ${unique.join(', ')} — ${edits.length} change${edits.length !== 1 ? 's' : ''} [via Bochi Web Editor]`;
+    }
+
+    function openPublishModal() {
+      const edits = (window as any).__bwStagedEdits || [];
+      if (edits.length === 0) return;
+
+      // Reset to default state
+      publishTitle.textContent = 'Publish Changes';
+      publishSubtitle.style.color = '';
+      publishSubtitle.textContent = `${edits.length} change${edits.length !== 1 ? 's' : ''} will be committed and deployed`;
+
+      // Build list of changes
+      publishList.innerHTML = edits.map((edit: any) => `
+        <li class="bw-publish-modal__item">
+          <svg class="bw-publish-modal__item-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <div class="bw-publish-modal__item-info">
+            <div class="bw-publish-modal__item-section">${formatSectionName(edit.section)}</div>
+            <div class="bw-publish-modal__item-desc">${edit.description || edit.filePath}</div>
+          </div>
+        </li>
+      `).join('');
+
+      // Reset body/footer to default
+      publishBody.style.display = '';
+      publishFooter.style.display = '';
+      publishCancel.style.display = '';
+      publishConfirm.disabled = false;
+      publishConfirm.innerHTML = 'Publish Now';
+
+      modalBackdrop.classList.add('bw-visible');
+    }
+
+    function closePublishModal() {
+      modalBackdrop.classList.remove('bw-visible');
+    }
+
+    async function handlePublish() {
+      const edits = (window as any).__bwStagedEdits || [];
+      if (edits.length === 0) return;
+
+      // Loading state
+      publishConfirm.disabled = true;
+      publishConfirm.innerHTML = '<span class="bw-publish-modal__spinner"></span> Publishing…';
+      publishCancel.style.display = 'none';
+
+      try {
+        const commitMessage = buildCommitMessage(edits);
+        const response = await fetch('/api/publish', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(window as any).__bwAuthToken || ''}`,
+          },
+          body: JSON.stringify({
+            edits: edits.map((e: any) => ({
+              filePath: e.filePath,
+              modifiedCode: e.modifiedCode,
+              section: e.section,
+              description: e.description,
+            })),
+            commitMessage,
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || 'Publish failed');
+        }
+
+        // Success state
+        publishBody.innerHTML = `
+          <div class="bw-publish-modal__success">
+            <div class="bw-publish-modal__success-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <div class="bw-publish-modal__success-title">Changes Published!</div>
+            <div class="bw-publish-modal__success-text">${data.message}</div>
+            ${data.commitUrl ? `<a class="bw-publish-modal__success-link" href="${data.commitUrl}" target="_blank" rel="noopener">View commit on GitHub →</a>` : ''}
+          </div>
+        `;
+
+        publishFooter.innerHTML = `
+          <button class="bw-publish-modal__btn bw-publish-modal__btn--cancel" id="bw-publish-done" type="button">Done</button>
+        `;
+        document.getElementById('bw-publish-done')!.addEventListener('click', () => {
+          closePublishModal();
+        });
+
+        // Clear staged edits
+        (window as any).__bwStagedEdits = [];
+        window.dispatchEvent(new CustomEvent('staged-edits-changed', { detail: { count: 0 } }));
+
+      } catch (err: any) {
+        // Error state — preserve staged edits for retry
+        publishConfirm.disabled = false;
+        publishConfirm.innerHTML = 'Retry';
+        publishCancel.style.display = '';
+        publishSubtitle.textContent = `Error: ${err.message}`;
+        publishSubtitle.style.color = '#ef4444';
+      }
+    }
+
+    publishBtn.addEventListener('click', openPublishModal);
+    publishCancel.addEventListener('click', closePublishModal);
+    publishConfirm.addEventListener('click', handlePublish);
+
+    // Close modal on backdrop click
+    modalBackdrop.addEventListener('click', (e) => {
+      if (e.target === modalBackdrop) closePublishModal();
+    });
+
+    // Close modal on Escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modalBackdrop.classList.contains('bw-visible')) {
+        closePublishModal();
+      }
+    });
 
     // ── Persist edit mode on internal navigation ──
     document.addEventListener('click', (e) => {
@@ -547,5 +1118,6 @@
       url.searchParams.set('edit', 'true');
       window.location.href = url.toString();
     });
+    } // end activateEditor
   })();
 </script>

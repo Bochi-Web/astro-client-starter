@@ -966,7 +966,10 @@
       try {
         const response = await fetch('/api/edit', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(window as any).__bwAuthToken || ''}`,
+          },
           body: JSON.stringify(requestBody),
         });
 

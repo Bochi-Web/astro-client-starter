@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { validateAuth } from './_lib/auth';
 
 /**
  * POST /api/edit
@@ -190,6 +191,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, message: 'Method not allowed' });
   }
+
+  // Auth check
+  const user = await validateAuth(req, res);
+  if (!user) return;
 
   try {
     const body = req.body as RequestBody;
