@@ -368,7 +368,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         github_repo: slug,
         github_owner: GITHUB_OWNER,
         vercel_url: vercelUrl,
-        status: 'active',
+        status: 'development',
         updated_at: new Date().toISOString(),
       })
       .eq('id', client_id);
