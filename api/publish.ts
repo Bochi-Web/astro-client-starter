@@ -1,4 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
+import { createClient } from '@supabase/supabase-js';
 import { validateAuth } from './_lib/auth';
 
 /**
@@ -125,6 +126,61 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         sha: newCommit.sha,
       }),
     });
+
+    // ── Track edits in Supabase (best-effort, don't fail publish) ──
+    try {
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_ANON_KEY;
+      const githubRepo = process.env.GITHUB_REPO;
+
+      if (supabaseUrl && supabaseKey && githubRepo) {
+        const supabase = createClient(supabaseUrl, supabaseKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        });
+
+        // Look up the client record by github_repo
+        const { data: client } = await supabase
+          .from('ai_website_clients')
+          .select('id, total_edits')
+          .eq('github_repo', githubRepo)
+          .single();
+
+        if (client) {
+          const now = new Date().toISOString();
+          const owner = getEnv('GITHUB_OWNER');
+          const commitUrl = `https://github.com/${owner}/${githubRepo}/commit/${newCommit.sha}`;
+
+          // Update the client record
+          await supabase
+            .from('ai_website_clients')
+            .update({
+              last_edited_at: now,
+              last_edited_by: user.email,
+              last_published_at: now,
+              total_edits: (client.total_edits || 0) + edits.length,
+              updated_at: now,
+            })
+            .eq('id', client.id);
+
+          // Insert edit history rows
+          const historyRows = edits.map((edit) => ({
+            client_id: client.id,
+            editor_email: user.email,
+            section: edit.section,
+            description: edit.description || `Edited ${edit.section}`,
+            commit_sha: newCommit.sha,
+            commit_url: commitUrl,
+          }));
+
+          await supabase
+            .from('ai_website_edit_history')
+            .insert(historyRows);
+        }
+      }
+    } catch (trackingError: any) {
+      // Log but don't fail the publish
+      console.error('Edit tracking error (non-fatal):', trackingError.message);
+    }
 
     return res.status(200).json({
       success: true,
