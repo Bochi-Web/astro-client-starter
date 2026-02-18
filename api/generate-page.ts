@@ -191,6 +191,9 @@ Customize this template with real client content. Return the complete file.`;
       generated = stripFences(await callClaude(GENERATE_SYSTEM_PROMPT, userPrompt));
     }
 
+    // ── Post-process: fix common Claude import mistakes ──
+    generated = fixImportPaths(generated, file_path);
+
     return res.status(200).json({
       success: true,
       data: {
@@ -301,4 +304,42 @@ INSTRUCTIONS: This is a detail page for the "${slug.replace(/-/g, ' ')}" service
   }
 
   return '';
+}
+
+/**
+ * Fix common import path mistakes Claude makes.
+ * Claude sometimes invents paths like '../../config', '../../config/siteConfig',
+ * '../../config/site.config', etc. Normalize them to the correct paths.
+ */
+function fixImportPaths(content: string, filePath: string): string {
+  // Determine the correct relative path to siteConfig based on file location
+  const isSection = filePath.includes('components/sections/');
+  const isPage = filePath.startsWith('src/pages/');
+  const isServicePage = filePath.includes('pages/services/');
+
+  let correctSiteConfigPath: string;
+  if (isSection) {
+    correctSiteConfigPath = '../../data/siteConfig';
+  } else if (isServicePage) {
+    correctSiteConfigPath = '../../data/siteConfig';
+  } else if (isPage) {
+    correctSiteConfigPath = '../data/siteConfig';
+  } else {
+    return content; // Unknown location, don't touch
+  }
+
+  // Fix any wrong siteConfig import path
+  // Matches: from '../../config', from '../../config/siteConfig', from '../config/site.config', etc.
+  const siteConfigImportRegex = /from\s+['"]([^'"]*(?:config|siteConfig|site\.config)[^'"]*)['"]/g;
+  content = content.replace(siteConfigImportRegex, (match, importPath) => {
+    // Don't fix if it's already the correct path
+    if (importPath === correctSiteConfigPath) return match;
+    // Only fix if it looks like a siteConfig import (not some other config)
+    if (/(?:site[._-]?config|\/config(?:\/|$))/i.test(importPath)) {
+      return `from '${correctSiteConfigPath}'`;
+    }
+    return match;
+  });
+
+  return content;
 }
