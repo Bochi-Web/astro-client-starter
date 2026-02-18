@@ -1,0 +1,186 @@
+---
+/**
+ * Service One — Individual Service Page
+ * Full service detail page with hero, overview, features, process, FAQ, and CTA.
+ * Each section has its own data-section attribute for the AI editor.
+ */
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { siteConfig } from '../../data/siteConfig';
+import Button from '../../components/ui/Button.astro';
+import SectionWrapper from '../../components/ui/SectionWrapper.astro';
+
+const service = siteConfig.services[0];
+
+const features = [
+  { title: 'Thorough Inspection', description: 'We start every job with a comprehensive assessment so nothing gets missed.' },
+  { title: 'Quality Materials', description: 'We use only professional-grade materials and products for lasting results.' },
+  { title: 'Expert Technicians', description: 'Our crew is trained, certified, and experienced in all aspects of this service.' },
+  { title: 'Clean Finish', description: 'We leave your space cleaner than we found it — guaranteed.' },
+  { title: 'On-Time Service', description: 'We show up when we say we will. Your time matters to us.' },
+  { title: 'Warranty Included', description: 'Every job is backed by our workmanship warranty for your peace of mind.' },
+];
+
+const processSteps = [
+  { step: '1', title: 'Free Consultation', description: 'We visit your property, assess the scope, and provide a transparent quote.' },
+  { step: '2', title: 'Schedule & Prepare', description: 'Pick a date that works for you. We handle all the prep and logistics.' },
+  { step: '3', title: 'Professional Execution', description: 'Our team completes the work efficiently and to the highest standard.' },
+  { step: '4', title: 'Final Walkthrough', description: 'We review the results with you to ensure everything exceeds expectations.' },
+];
+
+const faqs = [
+  { question: 'How long does this service typically take?', answer: 'Most projects are completed in 1–3 days depending on scope. We\'ll give you an accurate timeline during your consultation.' },
+  { question: 'Do I need to be home during the service?', answer: 'Not necessarily. Many of our clients provide access and we communicate progress via text or email throughout the day.' },
+  { question: 'What if I\'m not satisfied with the results?', answer: 'Your satisfaction is guaranteed. If anything doesn\'t meet your expectations, we\'ll come back and make it right at no additional cost.' },
+  { question: 'Can you work around my schedule?', answer: 'Absolutely. We offer flexible scheduling including early morning and weekend availability to minimize disruption to your routine.' },
+];
+---
+
+<BaseLayout title={`${service.title} — ${siteConfig.businessName}`} description={service.description}>
+
+  <!-- Service Hero -->
+  <section data-section="service-hero" class="relative bg-secondary overflow-hidden">
+    <div class="absolute inset-0">
+      <img
+        src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1600&q=80"
+        alt={service.title}
+        class="w-full h-full object-cover"
+        loading="eager"
+      />
+      <div class="absolute inset-0 bg-secondary/75"></div>
+    </div>
+    <div class="relative max-w-7xl mx-auto px-4 py-20 md:py-32">
+      <div class="max-w-2xl">
+        <p class="text-primary-light font-medium mb-2">Our Services</p>
+        <h1 class="text-4xl md:text-5xl font-heading font-extrabold text-white mb-6">{service.title}</h1>
+        <p class="text-lg text-gray-200 mb-8 leading-relaxed">
+          Reliable, professional service tailored to your needs. We bring the expertise, equipment, and care to get the job done right the first time.
+        </p>
+        <Button href="/contact/">Request a Free Quote</Button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Service Overview -->
+  <SectionWrapper id="service-overview">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div>
+        <h2 class="text-3xl font-heading font-bold text-secondary mb-6">What's Included</h2>
+        <p class="text-content-light text-lg leading-relaxed mb-4">
+          Our {service.title.toLowerCase()} service is designed to deliver consistent, high-quality results for homeowners across {siteConfig.address.city}. Whether you're dealing with routine upkeep or a more involved project, we have the tools, training, and experience to handle it.
+        </p>
+        <p class="text-content-light leading-relaxed mb-6">
+          Every job starts with a thorough assessment so we understand exactly what needs to be done. We provide a clear, written quote before any work begins — no surprises, no hidden fees. Our team works efficiently and respectfully, keeping you informed every step of the way.
+        </p>
+        <Button href="/contact/" variant="secondary">Get Started Today</Button>
+      </div>
+      <img
+        src="https://images.unsplash.com/photo-1581578731548-c64695cc6952?w=800&q=80"
+        alt={`${service.title} in progress`}
+        class="rounded-lg shadow-lg w-full h-auto object-cover aspect-[4/3]"
+        loading="lazy"
+      />
+    </div>
+  </SectionWrapper>
+
+  <!-- Service Features / Benefits -->
+  <SectionWrapper id="service-features" alt>
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-heading font-bold text-secondary mb-4">Why Choose Our {service.title}</h2>
+      <p class="text-content-light text-lg max-w-2xl mx-auto">Here's what sets our service apart from the rest.</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      {features.map((f) => (
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-full bg-primary-light flex items-center justify-center flex-shrink-0">
+            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div>
+            <h3 class="font-semibold text-secondary mb-1">{f.title}</h3>
+            <p class="text-sm text-content-light">{f.description}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </SectionWrapper>
+
+  <!-- Service Process -->
+  <SectionWrapper id="service-process">
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-heading font-bold text-secondary mb-4">Our Process</h2>
+      <p class="text-content-light text-lg max-w-2xl mx-auto">From first call to final walkthrough, here's how we work.</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+      {processSteps.map((s) => (
+        <div class="text-center">
+          <div class="w-16 h-16 rounded-full bg-primary text-white flex items-center justify-center text-2xl font-heading font-bold mx-auto mb-4 shadow-md">
+            {s.step}
+          </div>
+          <h3 class="font-semibold text-secondary mb-2">{s.title}</h3>
+          <p class="text-sm text-content-light">{s.description}</p>
+        </div>
+      ))}
+    </div>
+  </SectionWrapper>
+
+  <!-- Service FAQ -->
+  <SectionWrapper id="service-faq" alt>
+    <div class="text-center mb-12">
+      <h2 class="text-3xl font-heading font-bold text-secondary mb-4">Common Questions</h2>
+    </div>
+    <div class="max-w-3xl mx-auto space-y-3" id="service-faq-accordion">
+      {faqs.map((faq, index) => (
+        <div class="border border-border rounded-lg overflow-hidden">
+          <button
+            type="button"
+            class="svc-faq-trigger w-full flex items-center justify-between px-6 py-4 text-left font-medium text-secondary hover:bg-surface-alt transition-colors cursor-pointer"
+            aria-expanded="false"
+          >
+            <span>{faq.question}</span>
+            <svg class="svc-faq-chevron w-5 h-5 text-content-light flex-shrink-0 ml-4 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+          <div class="svc-faq-panel hidden px-6 pb-4" role="region">
+            <p class="text-content-light leading-relaxed">{faq.answer}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </SectionWrapper>
+
+  <!-- Service CTA -->
+  <section data-section="service-cta" class="bg-primary relative overflow-hidden">
+    <div class="absolute inset-0 bg-gradient-to-r from-primary-dark to-primary opacity-90"></div>
+    <div class="relative max-w-7xl mx-auto px-4 py-16 md:py-20 text-center">
+      <h2 class="text-3xl font-heading font-bold text-white mb-4">Ready for Professional {service.title}?</h2>
+      <p class="text-white/90 text-lg max-w-xl mx-auto mb-8">
+        Get a free, no-obligation quote today. We typically respond within 24 hours.
+      </p>
+      <Button href="/contact/" class="bg-white text-primary hover:bg-gray-100">Get Your Free Quote</Button>
+    </div>
+  </section>
+
+</BaseLayout>
+
+<script>
+  document.querySelectorAll('.svc-faq-trigger').forEach((trigger) => {
+    trigger.addEventListener('click', () => {
+      const panel = trigger.nextElementSibling as HTMLElement;
+      const chevron = trigger.querySelector('.svc-faq-chevron');
+      const isOpen = trigger.getAttribute('aria-expanded') === 'true';
+      document.querySelectorAll('.svc-faq-trigger').forEach((other) => {
+        if (other !== trigger) {
+          other.setAttribute('aria-expanded', 'false');
+          (other.nextElementSibling as HTMLElement)?.classList.add('hidden');
+          other.querySelector('.svc-faq-chevron')?.classList.remove('rotate-180');
+        }
+      });
+      trigger.setAttribute('aria-expanded', String(!isOpen));
+      panel?.classList.toggle('hidden');
+      chevron?.classList.toggle('rotate-180');
+    });
+  });
+</script>
