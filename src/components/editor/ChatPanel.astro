@@ -2,7 +2,8 @@
 /**
  * ChatPanel
  * Slide-in chat panel that opens when a section is selected in edit mode.
- * UI only — no Claude API connection. Listens for 'section-selected' events.
+ * Wired to /api/edit which calls Claude API for real code modifications.
+ * Listens for 'section-selected' events from EditOverlay.
  *
  * data-section: none (this is an editor chrome component, not a page section)
  */
@@ -541,9 +542,17 @@
 
     // ── State ──
     let currentSection: string | null = null;
+    let currentIsGlobal = false;
     let actionType = 'edit';
     let urlRefs: string[] = [];
     let imageFiles: { name: string; dataUrl: string }[] = [];
+    let isSending = false;
+
+    // Conversation history for multi-turn editing
+    let conversationHistory: { role: 'user' | 'assistant'; content: string }[] = [];
+
+    // Store the latest edit result (for future preview/commit steps)
+    (window as any).__bwLastEdit = null;
 
     // ── Format section name ──
     function formatLabel(slug: string): string {
@@ -556,9 +565,12 @@
     // ── Open / close panel ──
     function openPanel(section: string, isGlobal: boolean) {
       currentSection = section;
+      currentIsGlobal = isGlobal;
 
       // Clear previous conversation
       messagesEl.innerHTML = '';
+      conversationHistory = [];
+      (window as any).__bwLastEdit = null;
       urlRefs = [];
       imageFiles = [];
       attachments.innerHTML = '';
@@ -613,28 +625,20 @@
     }
     textarea.addEventListener('input', autoGrow);
 
-    // ── Send message ──
-    function sendMessage() {
-      const text = textarea.value.trim();
-      if (!text) return;
-
-      // Hide welcome
-      welcome.style.display = 'none';
-
-      // Add user bubble
-      const userBubble = document.createElement('div');
-      userBubble.className = 'bw-chat-bubble bw-chat-bubble--user';
-      userBubble.textContent = text;
-      messagesEl.appendChild(userBubble);
-
-      // Clear input
-      textarea.value = '';
-      autoGrow();
-
-      // Scroll to bottom
+    // ── Add a message bubble to the chat ──
+    function addBubble(text: string, type: 'user' | 'assistant' | 'error') {
+      const bubble = document.createElement('div');
+      bubble.className = `bw-chat-bubble bw-chat-bubble--${type === 'error' ? 'assistant' : type}`;
+      if (type === 'error') {
+        bubble.style.background = '#fef2f2';
+        bubble.style.color = '#dc2626';
+      }
+      bubble.textContent = text;
+      messagesEl.appendChild(bubble);
       messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
 
-      // Show thinking indicator
+    function showThinking(): HTMLElement {
       const thinking = document.createElement('div');
       thinking.className = 'bw-chat-thinking';
       thinking.innerHTML = `
@@ -644,16 +648,87 @@
       `;
       messagesEl.appendChild(thinking);
       messagesEl.scrollTop = messagesEl.scrollHeight;
+      return thinking;
+    }
 
-      // After a brief delay, show placeholder assistant response
-      setTimeout(() => {
+    // ── Send message to API ──
+    async function sendMessage() {
+      const text = textarea.value.trim();
+      if (!text || isSending || !currentSection) return;
+
+      isSending = true;
+      sendBtn.disabled = true;
+
+      // Hide welcome
+      welcome.style.display = 'none';
+
+      // Add user bubble
+      addBubble(text, 'user');
+
+      // Clear input
+      textarea.value = '';
+      autoGrow();
+
+      // Show thinking indicator
+      const thinking = showThinking();
+
+      // Build the request
+      const isNewPage = currentSection === '__new_page__';
+      const requestBody = {
+        section: currentSection,
+        message: text,
+        action: isNewPage ? 'new-page' : actionType,
+        referenceUrl: urlRefs.length > 0 ? urlRefs[0] : null,
+        referenceImage: imageFiles.length > 0 ? imageFiles[0].dataUrl : null,
+        isGlobal: currentIsGlobal,
+        currentPage: window.location.pathname,
+        conversationHistory,
+      };
+
+      try {
+        const response = await fetch('/api/edit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
+        });
+
+        const data = await response.json();
         thinking.remove();
-        const assistantBubble = document.createElement('div');
-        assistantBubble.className = 'bw-chat-bubble bw-chat-bubble--assistant';
-        assistantBubble.textContent = 'This will be connected to Claude API in the next step.';
-        messagesEl.appendChild(assistantBubble);
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-      }, 1200);
+
+        if (data.success) {
+          // Show Claude's explanation
+          addBubble(data.message, 'assistant');
+
+          // Store the conversation history for multi-turn
+          conversationHistory.push(
+            { role: 'user', content: text },
+            { role: 'assistant', content: JSON.stringify({ explanation: data.message, code: data.modifiedCode }) }
+          );
+
+          // Store the edit result for future preview/commit
+          (window as any).__bwLastEdit = {
+            section: currentSection,
+            filePath: data.filePath,
+            modifiedCode: data.modifiedCode,
+            originalCode: data.originalCode,
+          };
+
+          console.log('[ChatPanel] Edit result stored:', {
+            section: currentSection,
+            filePath: data.filePath,
+            codeLength: data.modifiedCode?.length,
+          });
+        } else {
+          addBubble(data.message || 'Something went wrong. Please try again.', 'error');
+        }
+      } catch (err: any) {
+        thinking.remove();
+        addBubble(`Connection error: ${err.message}. Make sure the server is running.`, 'error');
+      }
+
+      isSending = false;
+      sendBtn.disabled = false;
+      textarea.focus();
     }
 
     sendBtn.addEventListener('click', sendMessage);
@@ -770,10 +845,10 @@
       actionTypeMenu.classList.remove('bw-visible');
     });
 
-    // Prevent Escape from closing panel when URL input is open
+    // Escape key closes panel
     textarea.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
-        e.stopPropagation(); // don't let EditOverlay's Escape handler fire
+        e.stopPropagation();
         closePanel();
       }
     });
