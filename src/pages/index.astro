@@ -1,0 +1,20 @@
+---
+/**
+ * Homepage
+ * Renders all homepage sections in order.
+ * Sections will be added one by one as they are built.
+ */
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { siteConfig } from '../data/siteConfig';
+---
+
+<BaseLayout title={`${siteConfig.businessName} — ${siteConfig.tagline}`}>
+  <!-- Skeleton placeholder — sections will replace this -->
+  <section class="py-24 px-4 text-center">
+    <h1 class="text-4xl font-bold font-heading text-secondary mb-4">
+      {siteConfig.businessName}
+    </h1>
+    <p class="text-lg text-content-light">{siteConfig.tagline}</p>
+  </section>
+</BaseLayout>

@@ -1,0 +1,75 @@
+/*
+ * Client Theme Configuration
+ * --------------------------
+ * All visual theming is controlled via CSS custom properties below.
+ * To re-theme for a new client, duplicate this file and change the values.
+ * Zero component changes needed.
+ *
+ * The @theme block at the bottom maps these variables to Tailwind v4 utilities
+ * so you can use classes like `bg-primary`, `text-content-light`, `rounded-lg`, etc.
+ */
+
+:root {
+  /* Brand Colors */
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-primary-light: #dbeafe;
+  --color-secondary: #0f172a;
+  --color-accent: #f59e0b;
+
+  /* Neutrals */
+  --color-bg: #ffffff;
+  --color-bg-alt: #f8fafc;
+  --color-text: #1e293b;
+  --color-text-light: #64748b;
+  --color-border: #e2e8f0;
+
+  /* Typography */
+  --font-heading: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+
+  /* Spacing & Shape */
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+/*
+ * Tailwind v4 Theme Mapping
+ * Maps CSS custom properties to Tailwind utility classes.
+ * Usage: bg-primary, text-secondary, font-heading, rounded-lg, shadow-md, etc.
+ */
+@theme {
+  /* Colors */
+  --color-primary: var(--color-primary);
+  --color-primary-dark: var(--color-primary-dark);
+  --color-primary-light: var(--color-primary-light);
+  --color-secondary: var(--color-secondary);
+  --color-accent: var(--color-accent);
+  --color-surface: var(--color-bg);
+  --color-surface-alt: var(--color-bg-alt);
+  --color-content: var(--color-text);
+  --color-content-light: var(--color-text-light);
+  --color-border: var(--color-border);
+
+  /* Fonts */
+  --font-heading: var(--font-heading);
+  --font-body: var(--font-body);
+
+  /* Border Radius */
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-full: var(--radius-full);
+
+  /* Shadows */
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+}

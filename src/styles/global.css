@@ -1,0 +1,16 @@
+@import "tailwindcss";
+@import "./theme.css";
+
+/*
+ * Global Styles
+ * Base resets and defaults applied across the entire site.
+ */
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

@@ -1,0 +1,25 @@
+---
+/**
+ * Card
+ * Reusable card component for service cards, testimonial cards, etc.
+ * Provides consistent styling with theme-aware borders and shadows.
+ *
+ * Props:
+ *   class – additional CSS classes
+ */
+
+interface Props {
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+---
+
+<div
+  class:list={[
+    'bg-surface border border-border rounded-lg shadow-sm p-6 transition-shadow duration-200 hover:shadow-md',
+    className,
+  ]}
+>
+  <slot />
+</div>

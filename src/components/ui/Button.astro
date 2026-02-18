@@ -1,0 +1,47 @@
+---
+/**
+ * Button
+ * Reusable button component with primary and secondary variants.
+ * Uses theme colors so it automatically matches the client brand.
+ *
+ * Props:
+ *   href    – if provided, renders as <a> link; otherwise renders <button>
+ *   variant – "primary" (filled) or "secondary" (outlined)
+ *   class   – additional CSS classes
+ */
+
+interface Props {
+  href?: string;
+  variant?: 'primary' | 'secondary';
+  class?: string;
+  [key: string]: any;
+}
+
+const {
+  href,
+  variant = 'primary',
+  class: className = '',
+  ...rest
+} = Astro.props;
+
+const baseClasses =
+  'inline-flex items-center justify-center px-6 py-3 font-semibold rounded-md transition-colors duration-200 text-sm md:text-base cursor-pointer';
+
+const variantClasses =
+  variant === 'primary'
+    ? 'bg-primary text-white hover:bg-primary-dark'
+    : 'border-2 border-primary text-primary hover:bg-primary hover:text-white';
+
+const classes = `${baseClasses} ${variantClasses} ${className}`;
+const Tag = href ? 'a' : 'button';
+---
+
+{href ? (
+  <a href={href} class={classes} {...rest}>
+    <slot />
+  </a>
+) : (
+  <button class={classes} {...rest}>
+    <slot />
+  </button>
+)}

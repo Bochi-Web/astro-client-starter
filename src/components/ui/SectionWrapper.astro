@@ -1,0 +1,33 @@
+---
+/**
+ * SectionWrapper
+ * Utility component for consistent section spacing and alternating backgrounds.
+ * Every page section should use this wrapper to get proper padding, max-width,
+ * and the required data-section attribute for the AI editor.
+ *
+ * Props:
+ *   id  – maps to data-section attribute (required for AI editor)
+ *   alt – use alternating background color
+ */
+
+interface Props {
+  id: string;
+  class?: string;
+  alt?: boolean;
+}
+
+const { id, class: className = '', alt = false } = Astro.props;
+---
+
+<section
+  data-section={id}
+  class:list={[
+    'py-16 md:py-24 px-4',
+    alt ? 'bg-surface-alt' : 'bg-surface',
+    className,
+  ]}
+>
+  <div class="max-w-7xl mx-auto">
+    <slot />
+  </div>
+</section>
