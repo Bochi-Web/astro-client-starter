@@ -67,7 +67,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Fetch client record
     const { data: client, error: lookupError } = await supabase
       .from('ai_website_clients')
-      .select('id, client_name, creative_brief, scraped_data, site_config')
+      .select('id, client_name, github_owner, github_repo, site_config')
       .eq('id', client_id)
       .single();
 
@@ -75,14 +75,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(404).json({ success: false, message: 'Client not found' });
     }
 
-    const brief = (client.creative_brief || {}) as Record<string, any>;
-    const scraped = (client.scraped_data || {}) as Record<string, any>;
     const siteConfig = (client.site_config || {}) as Record<string, any>;
+    const brief = (siteConfig.creative_brief || {}) as Record<string, any>;
+    const scraped = (siteConfig.scraped_data || {}) as Record<string, any>;
     const genSettings = (siteConfig.generation_settings || {}) as Record<string, any>;
     const preserveMeta = genSettings.preserve_meta === true;
 
-    const githubOwner = siteConfig.github_owner as string;
-    const githubRepo = siteConfig.github_repo as string;
+    const githubOwner = client.github_owner as string;
+    const githubRepo = client.github_repo as string;
     const githubToken = getEnv('GITHUB_TOKEN');
 
     if (!githubOwner || !githubRepo) {
