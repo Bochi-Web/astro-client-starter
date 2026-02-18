@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { validateAuth } from './_lib/auth';
+import { validateAuth } from './_auth';
 
 /**
  * POST /api/client-intake
