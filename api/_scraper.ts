@@ -147,7 +147,9 @@ export async function fetchPage(url: string): Promise<{ html: string; finalUrl: 
 
 // ── Extraction ──
 
-const PHONE_REGEX = /(?:\+1[-.\s]?)?(?:\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})/g;
+// Strict US phone patterns: (XXX) XXX-XXXX, XXX-XXX-XXXX, XXX.XXX.XXXX, +1 variants
+// Requires consistent separator (not mixed), excludes coordinate-like patterns
+const PHONE_REGEX = /(?:\+1[\s.-]?)?(?:\(\d{3}\)[\s.-]?\d{3}[\s.-]?\d{4}|\b\d{3}[-]\d{3}[-]\d{4}\b|\b\d{3}\.\d{3}\.\d{4}\b|\b\d{3}\s\d{3}\s\d{4}\b)/g;
 const EMAIL_REGEX = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
 const SOCIAL_DOMAINS = [
   'facebook.com', 'fb.com',
@@ -229,8 +231,20 @@ export function extractPageData(html: string, url: string, baseOrigin: string): 
   // Internal links
   const internal_links = extractInternalLinks(html, url, baseOrigin);
 
-  // Phone numbers
-  const phone_numbers = [...new Set(html.match(PHONE_REGEX) || [])];
+  // Phone numbers — deduplicate by normalized digits
+  const rawPhones: string[] = html.match(PHONE_REGEX) || [];
+  const seenDigits = new Set<string>();
+  const phone_numbers: string[] = [];
+  for (const p of rawPhones) {
+    const digits = p.replace(/\D/g, '');
+    // Must be exactly 10 or 11 digits (with country code)
+    if (digits.length < 10 || digits.length > 11) continue;
+    const normalized = digits.length === 11 ? digits.slice(1) : digits;
+    if (!seenDigits.has(normalized)) {
+      seenDigits.add(normalized);
+      phone_numbers.push(p.trim());
+    }
+  }
 
   // Email addresses
   const rawEmails: string[] = html.match(EMAIL_REGEX) || [];
