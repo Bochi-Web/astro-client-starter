@@ -3,10 +3,9 @@ import { validateAuth } from './_lib/auth';
 
 /**
  * POST /api/client-intake
- * Conversational AI intake for new client sites.
+ * Creative brief conversation for new client sites.
  * Called from the BWCC NewClientChat dialog.
- * Claude extracts client details and returns either a follow-up question
- * or structured client data ready for insertion.
+ * Claude acts as a creative director gathering design & content requirements.
  */
 
 // ── CORS helpers ──
@@ -34,49 +33,64 @@ function getEnv(key: string): string {
   return value;
 }
 
-// ── System prompt for client intake ──
+// ── System prompt for creative brief ──
 
-const SYSTEM_PROMPT = `You are an AI assistant helping a web agency onboard new client websites. Your job is to gather enough information about a new client to create a database record for their website project.
+const SYSTEM_PROMPT = `You are a creative director at a web design agency helping build a client brief. You're having a conversation to gather everything needed to build their website. Be conversational and enthusiastic.
 
-You need to extract the following fields:
-- client_name (required): The business/client name
-- business_type: What kind of business (e.g., "Pressure Washing", "Plumbing", "Restaurant")
-- domain: Their website domain if known (e.g., "example.com")
-- github_repo: Repository name — default to "astro-client-starter" unless told otherwise
-- github_owner: GitHub org/user — default to "Bochi-Web" unless told otherwise
-- notes: Any additional context about the project
-- site_config: A JSON object with any structured data like address, phone, colors, services, etc.
+When the conversation starts, you'll receive the structured fields (business name, domain, current website URL if provided) as a [Client info: ...] block in the user's first message.
 
-Respond in this exact JSON format (no markdown, no code fences):
+Your job:
+1. Acknowledge what you know so far
+2. If a current website URL was provided, note that it will be scraped for content later
+3. Ask about design preferences:
+   - What vibe/mood? (modern, classic, bold, minimal, etc.)
+   - Color preferences? Any brand colors to keep or change?
+   - Sites they admire or want to look like?
+   - What feeling should visitors get?
+4. Ask about content priorities:
+   - What's most important to highlight?
+   - Any specific services or offerings to feature?
+   - Testimonials or reviews they want included?
+   - Calls to action — what should visitors do?
+5. Ask about anything else:
+   - Photos they want to use?
+   - Specific pages beyond the standard set?
+   - Any features they need (booking, forms, etc.)?
 
-If you have enough info to create the client record:
+Don't ask everything at once. Have a natural conversation — ask 2-3 questions at a time based on what they've shared so far.
+
+When URLs are pasted, acknowledge them as reference sites and note what style elements you'd draw from them.
+When images are shared, describe what you see and incorporate the visual direction into the brief.
+
+RESPONSE FORMAT — always respond with valid JSON, no markdown code fences:
+
+For regular conversation:
 {
-  "action": "create_client",
-  "reply": "A confirmation message summarizing what you're creating",
-  "clientData": {
-    "client_name": "...",
-    "business_type": "...",
-    "domain": "...",
-    "github_repo": "...",
-    "github_owner": "...",
-    "notes": "...",
-    "site_config": { ... }
+  "action": "continue",
+  "reply": "Your conversational response here"
+}
+
+When the user's message contains [FINALIZE_BRIEF], compile everything discussed into a structured creative brief:
+{
+  "action": "brief_complete",
+  "reply": "A conversational summary of the brief for the user to read",
+  "creativeBrief": {
+    "business_type": "Type of business",
+    "design_direction": "Overall design direction and mood",
+    "color_preferences": "Color palette notes",
+    "target_audience": "Who the site is for",
+    "content_priorities": ["Priority 1", "Priority 2"],
+    "services_to_feature": ["Service 1", "Service 2"],
+    "reference_sites": ["site1.com", "site2.com"],
+    "calls_to_action": ["CTA 1", "CTA 2"],
+    "special_features": ["Feature 1", "Feature 2"],
+    "pages": ["Home", "Services", "About", "Contact"],
+    "notes": "Any additional context or requirements"
   }
 }
 
-If you need more information:
-{
-  "action": "need_more_info",
-  "reply": "Your follow-up question to the user"
-}
-
-Guidelines:
-- At minimum you need the client/business name to create a record
-- Be conversational and helpful — don't just list questions
-- If the user gives you a lot of info at once, extract everything and create the record
-- For site_config, structure any provided details (address, phone, services, colors, tagline, etc.) as a clean JSON object
-- Default github_repo to "astro-client-starter" and github_owner to "Bochi-Web"
-- Only respond with valid JSON`;
+Only include fields in creativeBrief that were actually discussed. Omit fields that weren't covered.
+Always respond with valid JSON only — no markdown, no code fences, no extra text.`;
 
 // ── Types ──
 
@@ -150,11 +164,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
         'HTTP-Referer': 'https://bochi-web.com',
-        'X-Title': 'Bochi Web Client Intake',
+        'X-Title': 'Bochi Web Creative Brief',
       },
       body: JSON.stringify({
         model: 'anthropic/claude-sonnet-4',
-        max_tokens: 2048,
+        max_tokens: 4096,
         messages,
       }),
     });
@@ -178,7 +192,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       success: true,
       action: parsed.action,
       reply: parsed.reply,
-      clientData: parsed.clientData || null,
+      creativeBrief: parsed.creativeBrief || null,
     });
   } catch (error: any) {
     console.error('Client intake API error:', error);
