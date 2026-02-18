@@ -233,7 +233,7 @@ export function extractPageData(html: string, url: string, baseOrigin: string): 
   const phone_numbers = [...new Set(html.match(PHONE_REGEX) || [])];
 
   // Email addresses
-  const rawEmails = html.match(EMAIL_REGEX) || [];
+  const rawEmails: string[] = html.match(EMAIL_REGEX) || [];
   const email_addresses = [...new Set(
     rawEmails.filter((e) => !e.includes('.png') && !e.includes('.jpg') && !e.includes('.svg'))
   )];
