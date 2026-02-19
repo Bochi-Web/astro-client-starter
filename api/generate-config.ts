@@ -81,10 +81,26 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     // ── Generate siteConfig.ts ──
     const scrapedGlobal = scraped.global || {};
-    const phones = scrapedGlobal.phone_numbers || [];
-    const emails = scrapedGlobal.email_addresses || [];
-    const addresses = scrapedGlobal.addresses || [];
-    const socialLinks = scrapedGlobal.social_links || {};
+    const phones: string[] = scrapedGlobal.phone_numbers || [];
+    const emails: string[] = scrapedGlobal.email_addresses || [];
+    const physicalAddress: string | null = scrapedGlobal.physical_address || null;
+    const socialLinks: string[] = scrapedGlobal.social_links || [];
+
+    // Extract homepage content for location context
+    const scrapedPages: any[] = scraped.pages || [];
+    const homepage = scrapedPages.find((p: any) => p.slug === 'index') || scrapedPages[0];
+    const homepageText = homepage?.body_text?.slice(0, 800) || '';
+
+    // Check if logo exists
+    const hasLogo = !!siteConfig.logo_data_url;
+    const logoDataUrl = siteConfig.logo_data_url as string | undefined;
+    let logoExt = 'png';
+    if (logoDataUrl) {
+      const mimeMatch = logoDataUrl.match(/^data:image\/([\w+]+);base64,/);
+      if (mimeMatch) {
+        logoExt = mimeMatch[1] === 'svg+xml' ? 'svg' : mimeMatch[1];
+      }
+    }
 
     const siteConfigPrompt = `I need you to customize this Astro siteConfig.ts template for a ${brief.business_type || 'local business'} called "${client.client_name}".
 
@@ -99,16 +115,21 @@ CLIENT DATA:
 - Tagline/design direction: ${brief.design_direction || 'professional and modern'}
 - Phone: ${phones[0] || '(555) 000-0000'}
 - Email: ${emails[0] || `info@${githubRepo}.com`}
-- Address: ${addresses[0] || 'Address pending'}
-- Social links: ${JSON.stringify(socialLinks)}
+- Physical address: ${physicalAddress || 'Not available'}
+- Social links: ${socialLinks.length > 0 ? socialLinks.join(', ') : 'none found'}
 - Services to feature: ${JSON.stringify(brief.services_to_feature || [])}
 - Key CTAs: ${JSON.stringify(brief.calls_to_action || [])}
+${hasLogo ? `- Logo file: /logo.${logoExt} (already committed to public/ — add logoPath: "/logo.${logoExt}" to the config)` : ''}
 
-${brief.services_to_feature && brief.services_to_feature.length > 0 ? `
-IMPORTANT: Create one service entry for each of these services: ${brief.services_to_feature.join(', ')}.
-Each service needs a slug (kebab-case, e.g. "pressure-washing"), a title, a short description, and an icon.
-Available icons: "wrench", "chart", "shield", "home", "star", "truck", "leaf", "droplet", "hammer", "sparkles".
-` : ''}
+SCRAPED HOMEPAGE CONTENT (use this to determine correct city/state/location):
+${homepageText}
+
+IMPORTANT:
+- Use the SCRAPED content to determine the correct city, state, and location — do NOT keep the template defaults.
+- The address object must reflect the client's actual location from the scraped data, not the template placeholder.
+${brief.services_to_feature && brief.services_to_feature.length > 0 ? `- Create one service entry for each of these services: ${brief.services_to_feature.join(', ')}.
+  Each service needs a slug (kebab-case, e.g. "pressure-washing"), a title, a short description, and an icon.
+  Available icons: "wrench", "chart", "shield", "home", "star", "truck", "leaf", "droplet", "hammer", "sparkles".` : ''}
 
 Customize this siteConfig with real client data. Keep the exact same TypeScript structure and export.
 Return the complete file.`;

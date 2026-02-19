@@ -259,7 +259,8 @@ INSTRUCTIONS: Write a compelling headline and subtext. Use the scraped H1 and ho
 
   if (filePath.includes('Navigation.astro')) {
     return `
-INSTRUCTIONS: Update navigation links to match the services in siteConfig. Include Home, Services dropdown (one link per service), About, and Contact links.`;
+INSTRUCTIONS: Update navigation links to match the services in siteConfig. Include Home, Services dropdown (one link per service), About, and Contact links.
+If siteConfig has a logoPath property, display the logo as an <img> tag: <img src={siteConfig.logoPath} alt={siteConfig.businessName} class="h-10 w-auto" />. Otherwise use the business name as text.`;
   }
 
   if (filePath.includes('Services.astro')) {
@@ -289,7 +290,7 @@ INSTRUCTIONS: Create 5-6 relevant FAQs for a ${brief.business_type || 'local bus
 
   if (filePath.includes('Footer.astro')) {
     return `
-INSTRUCTIONS: Include all contact info from siteConfig, social links, service quick links, and a copyright line.`;
+INSTRUCTIONS: Include all contact info from siteConfig, social links, service quick links, and a copyright line. If siteConfig has a logoPath, display the logo image in the footer.`;
   }
 
   if (filePath.includes('contact.astro')) {
